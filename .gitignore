@@ -1,0 +1,10 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+
+# Local credentials and candidate data must never be committed.
+mini_agent_python/.env
+mini_agent_python/data/*.json
+mini_agent_python/data/*.audio
+mini_agent_python/logs/*.jsonl
+mini_agent_python/workspace/summary.md
