@@ -117,8 +117,12 @@ Gemini -> OpenAI -> DeepSeek -> OpenRouter -> Custom OpenAI-compatible endpoint
 
 ## 5. 安全模型
 
-- **访问口令**：设置 `APP_ACCESS_TOKEN` 后，所有 `/api/*` 需要匹配的 `X-App-Token`，
-  用 `hmac.compare_digest` 常量时间比较。`/healthz` 始终公开且不含数据。
+- **分级访问**：
+  - 不设 `APP_ACCESS_TOKEN`（本地默认）：全权限，直接进工作台。
+  - 设了口令、非 demo：所有 `/api/*` 都需匹配的 `X-App-Token`（`hmac.compare_digest` 常量时间比较）。
+  - `APP_DEMO_MODE=1` + 设口令：游客**免密只读浏览**，写入 / AI 调用 / 联网需管理口令，
+    否则返回 403。适合把 demo 链接直接发给面试官，且防止陌生人消耗 Gemini 配额。
+- **防暴力破解**：口令校验按 IP 限流，连续失败 5 次锁定 60 秒（返回 429）。
 - **本地数据不入库**：`.env` 和 `data/*.json` 均被 gitignore，简历/面试隐私不会进仓库。
 - **响应头**：`X-Content-Type-Options`、`X-Frame-Options: DENY`、`Referrer-Policy: no-referrer`。
 - **上传限制**：音频 50MB、简历 25MB、JSON 体 120KB；MIME 类型白名单校验。

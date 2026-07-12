@@ -7,6 +7,8 @@ import mimetypes
 import os
 import sys
 import tempfile
+import threading
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Dict, Optional
 from urllib.parse import urlparse
@@ -17,7 +19,7 @@ if PROJECT_ROOT not in sys.path:
 
 from core.audio_transcription import AudioTranscriptionError, extract_resume_file, transcribe_audio
 from core.growth_memory import build_candidate_memory
-from core.interview_review import extract_job_description, generate_growth_report, generate_interview_review, sample_interview
+from core.interview_review import extract_job_description, generate_growth_report, generate_interview_review, sample_interview, sample_reviewed_interview
 from core.interview_store import InterviewStore
 from core.model_provider import build_model, load_dotenv
 from core.multipart import parse_multipart
@@ -39,6 +41,21 @@ ALLOWED_AUDIO_TYPES = {"audio/mpeg", "audio/mp3", "audio/wav", "audio/x-wav", "a
 ALLOWED_RESUME_TYPES = {"application/pdf", "image/png", "image/jpeg", "image/webp"}
 
 load_dotenv(os.path.join(PROJECT_ROOT, ".env"))
+
+DEMO_MODE = os.environ.get("APP_DEMO_MODE", "").strip().lower() in {"1", "true", "yes"}
+LOGIN_MAX_FAILURES = 5
+LOGIN_LOCK_SECONDS = 60
+_login_failures: Dict[str, Any] = {}
+_login_lock = threading.Lock()
+
+
+def seed_demo_data() -> None:
+    """In demo mode, make sure a visitor lands on a fully worked example."""
+    if not DEMO_MODE:
+        return
+    if not STORE.records():
+        STORE.create(sample_reviewed_interview())
+
 
 
 def validate_interview(payload: Dict[str, Any]) -> Optional[str]:
@@ -82,10 +99,12 @@ class AssistantHandler(BaseHTTPRequestHandler):
                         "model": getattr(model, "model", ""),
                         "active_provider": getattr(model, "active_provider", "gemini"),
                         "providers": getattr(model, "provider_names", [getattr(model, "active_provider", "gemini")]),
+                        "demo_mode": DEMO_MODE,
+                        "can_write": self.can_write(),
                     }
                 )
             except RuntimeError as exc:
-                self.send_json({"ok": False, "error": str(exc)}, 503)
+                self.send_json({"ok": False, "error": str(exc), "demo_mode": DEMO_MODE, "can_write": self.can_write()}, 503)
             return
         if path == "/api/interviews":
             self.send_json({"ok": True, "interviews": STORE.list()})
@@ -139,6 +158,8 @@ class AssistantHandler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:  # noqa: N802
         path = urlparse(self.path).path
         if path.startswith("/api/") and not self.has_api_access():
+            return
+        if not self.require_write():
             return
         if path == "/api/transcribe":
             self.handle_audio_upload()
@@ -271,6 +292,8 @@ class AssistantHandler(BaseHTTPRequestHandler):
     def do_PUT(self) -> None:  # noqa: N802
         if not self.has_api_access():
             return
+        if not self.require_write():
+            return
         parts = self.path_parts(urlparse(self.path).path)
         if len(parts) == 3 and parts[:2] == ["api", "resumes"]:
             payload = self.read_json_body()
@@ -386,6 +409,8 @@ class AssistantHandler(BaseHTTPRequestHandler):
     def do_PATCH(self) -> None:  # noqa: N802
         if not self.has_api_access():
             return
+        if not self.require_write():
+            return
         parts = self.path_parts(urlparse(self.path).path)
         if len(parts) != 5 or parts[:2] != ["api", "interviews"] or parts[3] != "actions":
             self.send_json({"ok": False, "error": "接口不存在。"}, 404)
@@ -402,14 +427,59 @@ class AssistantHandler(BaseHTTPRequestHandler):
     def path_parts(self, path: str):
         return [part for part in path.split("/") if part]
 
-    def has_api_access(self) -> bool:
+    def client_id(self) -> str:
+        return self.client_address[0] if self.client_address else "unknown"
+
+    def has_valid_token(self) -> bool:
         required_token = os.environ.get("APP_ACCESS_TOKEN", "").strip()
         if not required_token:
             return True
         supplied_token = self.headers.get("X-App-Token", "")
-        if hmac.compare_digest(required_token, supplied_token):
+        if not supplied_token:
+            return False
+        return hmac.compare_digest(required_token, supplied_token)
+
+    def can_write(self) -> bool:
+        """Full-permission caller: no token configured, or a valid token supplied."""
+        return self.has_valid_token()
+
+    def has_api_access(self) -> bool:
+        """Read-level gate. Demo mode lets anyone read; otherwise a token is required."""
+        if not os.environ.get("APP_ACCESS_TOKEN", "").strip():
             return True
-        self.send_json({"ok": False, "error": "需要访问口令。"}, 401)
+        if DEMO_MODE:
+            return True
+        return self._token_or_error(401, "需要访问口令。")
+
+    def require_write(self) -> bool:
+        """Write-level gate for POST/PUT/PATCH."""
+        if not os.environ.get("APP_ACCESS_TOKEN", "").strip():
+            return True
+        if not DEMO_MODE:
+            # The read gate already validated the token on these routes.
+            return True
+        return self._token_or_error(403, "演示模式为只读。保存、AI 复盘和联网搜索需要管理口令。")
+
+    def _token_or_error(self, fail_status: int, fail_error: str) -> bool:
+        """Validate the supplied token with per-IP brute-force protection."""
+        client = self.client_id()
+        now = time.monotonic()
+        with _login_lock:
+            state = _login_failures.get(client)
+            if state and state["count"] >= LOGIN_MAX_FAILURES and now < state["until"]:
+                self.send_json({"ok": False, "error": "尝试次数过多，请稍后再试。"}, 429)
+                return False
+        if self.has_valid_token():
+            with _login_lock:
+                _login_failures.pop(client, None)
+            return True
+        with _login_lock:
+            state = _login_failures.get(client, {"count": 0, "until": 0.0})
+            state["count"] += 1
+            if state["count"] >= LOGIN_MAX_FAILURES:
+                state["until"] = now + LOGIN_LOCK_SECONDS
+            _login_failures[client] = state
+        self.send_json({"ok": False, "error": fail_error}, fail_status)
         return False
 
     def read_multipart(self, max_bytes: int, size_error: str):
@@ -484,8 +554,11 @@ def main() -> int:
     parser.add_argument("--port", type=int, default=int(os.environ.get("PORT", "8765")))
     parser.add_argument("--host", default=os.environ.get("HOST", "127.0.0.1"))
     args = parser.parse_args()
+    seed_demo_data()
     server = ThreadingHTTPServer((args.host, args.port), AssistantHandler)
     print("Autumn PM interview assistant running at http://%s:%s" % (args.host, args.port))
+    if DEMO_MODE:
+        print("Demo mode: read-only for visitors; writes need APP_ACCESS_TOKEN.")
     print("Press Ctrl-C to stop.")
     try:
         server.serve_forever()

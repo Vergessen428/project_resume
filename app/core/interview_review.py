@@ -169,6 +169,38 @@ def sample_interview() -> Dict[str, str]:
     }
 
 
+def sample_review() -> Dict[str, Any]:
+    """A pre-baked review so demo mode can show the full workflow without a model call."""
+    return _normalise_review({
+        "summary": "整体表达清楚，但对指标的定义和归因偏弱：能说出看 DAU 和报名人数，却没讲清为什么选这两个指标、如何归因。项目主导力有亮点（主动把需求拆成两期），但结果量化模糊。",
+        "strengths": [
+            {"title": "主动做取舍", "evidence": "[01:36] 我最后把需求拆成了两期，先上线报名提醒。", "why_it_worked": "在资源约束下给出了可落地的优先级方案，体现项目主导力。"},
+        ],
+        "gaps": [
+            {"title": "指标定义与归因偏弱", "evidence": "[01:10] 因为用户多了，报名应该也会更多。", "improvement": "先定义北极星指标与护栏指标，再讲清 DAU 与报名之间的因果假设和验证方式。"},
+            {"title": "结果缺乏量化", "evidence": "[02:12] 具体数值我记不太清了。", "improvement": "复盘时补齐关键数字（提升幅度、样本、周期），用结构化结果收尾。"},
+        ],
+        "questions": [
+            {"question": "你怎么判断它是否成功？", "answer_summary": "看 DAU 和报名人数。", "evidence": "[00:38] 我会看 DAU 和报名人数，后来 DAU 提升了。", "assessment": "指标选择方向对，但没有定义口径，也没说明与目标的关系。", "score": 2, "next_practice": "用『北极星+护栏』框架重述一遍这个项目的成功标准。"},
+        ],
+        "skill_diagnosis": [
+            {"skill_id": "metrics_experiment", "skill_name": "指标与实验", "score": 2, "evidence": "[01:10] 因为用户多了，报名应该也会更多。", "diagnosis": "把相关当因果，缺少归因意识。", "next_practice": "练习拆解一个指标到可验证的因果链。"},
+            {"skill_id": "story_ownership", "skill_name": "项目主导力", "score": 4, "evidence": "[01:36] 我最后把需求拆成了两期。", "diagnosis": "有清晰的个人决策和取舍。", "next_practice": "补上决策带来的量化结果。"},
+        ],
+        "action_plan": [
+            {"action": "用北极星+护栏指标重写这个项目的成功定义", "priority": "高", "reason": "指标是本场最大失分点。"},
+            {"action": "补齐项目关键数字并做一版量化结果收尾", "priority": "中", "reason": "结果模糊会削弱说服力。"},
+        ],
+        "follow_up": "下一场面试前，准备一个能讲清指标定义、归因和量化结果的完整项目故事。",
+    })
+
+
+def sample_reviewed_interview() -> Dict[str, Any]:
+    record = sample_interview()
+    record["review"] = sample_review()
+    return record
+
+
 def _clip(value: Any, limit: int) -> str:
     text = str(value or "")
     return text[:limit] + ("\n[内容已截断]" if len(text) > limit else "")
