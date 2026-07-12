@@ -12,8 +12,9 @@ import unittest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "app"))
 
 from core.multipart import parse_multipart
-from core.interview_review import _normalise_review, _parse_json
+from core.interview_review import _normalise_review, _parse_json, sample_reviewed_interview
 from core.growth_memory import build_candidate_memory
+from core.interview_store import InterviewStore
 from core.research_store import ResearchStore
 
 
@@ -97,6 +98,22 @@ class ResearchStoreTests(unittest.TestCase):
             store.set_status(b["id"], "approved")
             matched = store.approved_for("字节", "产品经理")
             self.assertEqual([m["company"] for m in matched], ["字节"])
+
+
+class DemoSeedTests(unittest.TestCase):
+    def test_seeded_sample_carries_a_full_review(self):
+        # Mirrors seed_demo_data: create strips review, so it must be re-attached.
+        with tempfile.TemporaryDirectory() as tmp:
+            store = InterviewStore(os.path.join(tmp, "interviews.json"))
+            sample = sample_reviewed_interview()
+            review = sample.pop("review", None)
+            created = store.create(sample)
+            self.assertIsNone(created["review"])  # create() always nulls review
+            store.save_review(created["id"], review)
+            fetched = store.get(created["id"])
+            self.assertIsInstance(fetched["review"], dict)
+            self.assertTrue(fetched["review"]["skill_diagnosis"])
+            self.assertTrue(store.list()[0]["has_review"])
 
 
 if __name__ == "__main__":

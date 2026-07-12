@@ -2,17 +2,13 @@ services:
   - type: web
     name: autumn-pm-coach
     runtime: python
-    plan: starter
+    plan: free
     buildCommand: "true"
     startCommand: "python3 -B app/web_app.py --host 0.0.0.0 --port $PORT"
     healthCheckPath: /healthz
-    disk:
-      name: autumn-pm-data
-      mountPath: /var/data
-      sizeGB: 1
     envVars:
-      - key: APP_DATA_DIR
-        value: /var/data
+      - key: APP_DEMO_MODE
+        value: "1"
       - key: APP_ACCESS_TOKEN
         sync: false
       - key: GEMINI_API_KEY

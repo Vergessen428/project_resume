@@ -54,7 +54,11 @@ def seed_demo_data() -> None:
     if not DEMO_MODE:
         return
     if not STORE.records():
-        STORE.create(sample_reviewed_interview())
+        sample = sample_reviewed_interview()
+        review = sample.pop("review", None)
+        created = STORE.create(sample)
+        if review:
+            STORE.save_review(created["id"], review)
 
 
 
