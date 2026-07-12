@@ -1,0 +1,46 @@
+app/web/app.js
+  s_1215d3896a5029::t_68292c4b07a0c7 79
+app/core/interview_review.py
+  s_1215d3896a5029::t_a0a73446de0547 172-203
+docs/DATA_BACKUP.md
+  s_1215d3896a5029::t_f99e919da0f384 1-55
+app/web_app.py
+  s_1215d3896a5029::t_98e58f498adcdc 295-296
+  s_1215d3896a5029::t_6dba822a48d7f0 162-163
+  s_1215d3896a5029::t_55a63aeec7e832 45-48,50-59
+  s_1215d3896a5029::t_386d11fa5f02ab 22
+  s_1215d3896a5029::t_c35cae08faa479 557,560-561
+  s_1215d3896a5029::t_552d2f32cb66dd 102-103,107
+  s_1215d3896a5029::t_bad1a24253cc84 49
+  s_1215d3896a5029::t_0e8f7dc605bc8a 412-413,430-433,438-451,453-458,460,462,465-474,476-481
+  s_1215d3896a5029::t_c2f49c8a7b1dbb 10-11
+  s_1215d3896a5029::t_68939241957c3f 452,459,461,463-464,482
+docs/ARCHITECTURE_EVOLUTION.md
+  s_1215d3896a5029::t_d9fdaeb24998ba 1-70
+docs/PROJECT_OVERVIEW.md
+  s_1215d3896a5029::t_350971e1808730 120-125
+README.md
+  s_1215d3896a5029::t_5416db663b9827 9-11
+docs/INTERVIEW_TALKING_POINTS.md
+  s_1215d3896a5029::t_340fa21fd9791e 1-116
+app/.env.example
+  s_1215d3896a5029::t_7acd35f968bcef 25-32
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "c3da20b12b425c7f76123b388bd759f01d22daf0",
+  "prompts": {},
+  "sessions": {
+    "s_1215d3896a5029": {
+      "agent_id": {
+        "tool": "trae",
+        "id": "6a506664789561735b67dfdd",
+        "model": "openrouter-3o__max"
+      },
+      "human_author": "Vergessen428 <Vergessen428@users.noreply.github.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
