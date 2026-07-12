@@ -18,7 +18,7 @@ login screen. It is kept only in the browser session.
 
 After the service exists, add `OPENAI_API_KEY`, `DEEPSEEK_API_KEY`,
 `OPENROUTER_API_KEY`, or the `CUSTOM_MODEL_*` variables in Render's environment
-settings. See `mini_agent_python/.env.example` for model names and URLs.
+settings. See `app/.env.example` for model names and URLs.
 
 ## Operational notes
 

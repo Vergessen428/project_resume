@@ -4,7 +4,7 @@ services:
     runtime: python
     plan: starter
     buildCommand: "true"
-    startCommand: "python3 -B mini_agent_python/web_app.py --host 0.0.0.0 --port $PORT"
+    startCommand: "python3 -B app/web_app.py --host 0.0.0.0 --port $PORT"
     healthCheckPath: /healthz
     disk:
       name: autumn-pm-data
