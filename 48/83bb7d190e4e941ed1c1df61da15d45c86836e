@@ -1,0 +1,21 @@
+.github/workflows/test.yml
+  s_1215d3896a5029::t_b9092a1892b522 1-18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "4883bb7d190e4e941ed1c1df61da15d45c86836e",
+  "prompts": {},
+  "sessions": {
+    "s_1215d3896a5029": {
+      "agent_id": {
+        "tool": "trae",
+        "id": "6a506664789561735b67dfdd",
+        "model": "openrouter-3o__max"
+      },
+      "human_author": "Vergessen428 <Vergessen428@users.noreply.github.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
