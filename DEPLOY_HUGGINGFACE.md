@@ -1,78 +1,39 @@
-# 部署到 Hugging Face Spaces（免费，境外节点，保留全功能）
+# 部署到 Hugging Face Spaces
 
-Hugging Face Spaces 免费、服务器在境外（能访问 Google/OpenAI，所以 Gemini 全功能可用，
-包括音频转写和简历文件解析），控制台在国内通常也能打开。用 Docker SDK 部署。
-
-本仓库已经准备好所需文件：
-- `Dockerfile`：Python 3.12 镜像，监听 `0.0.0.0:7860`，以 UID 1000 运行。
-- `README.md` 顶部的 YAML frontmatter：`sdk: docker` + `app_port: 7860`，Spaces 靠它识别。
-- 纯标准库，无 `requirements.txt`，构建很快。
+> 重要：Hugging Face 现在**只有 Static Space 免费**，Docker / Gradio Space 需要付费 PRO。
+> 所以免费展示走**方案一（静态版）**；需要实时 AI 的完整版走**方案二（Docker，付费）**。
 
 ---
 
-## 步骤
+## 方案一：免费静态展示版（推荐，0 成本）
 
-### 1. 注册 / 登录 Hugging Face
-浏览器打开 [huggingface.co](https://huggingface.co) → 注册或登录（邮箱即可，不强制 GitHub）。
+用 `static_demo/` 这个纯前端目录，传到 HF **免费 Static Space**。访客打开就能看到完整界面
+和一份带原文证据的示例复盘；写操作（保存/AI/上传/搜索）会提示"需在完整版体验"。
 
-### 2. 新建 Space
-- 打开 [huggingface.co/new-space](https://huggingface.co/new-space)
-- **Owner**：你的用户名
-- **Space name**：例如 `autumn-pm-coach`
-- **License**：随意（如 mit）
-- **SDK**：选 **Docker** → **Blank**（空白模板）
-- **Visibility**：**Public**（公开才免费；里面是 demo，不含你的真实隐私数据）
-- 点 **Create Space**
+### 步骤
 
-### 3. 把代码传上去（二选一）
+1. 登录 [huggingface.co](https://huggingface.co)。
+2. [huggingface.co/new-space](https://huggingface.co/new-space)：
+   - Space name：如 `autumn-pm-coach`
+   - **SDK：选 Static**
+   - Visibility：**Public**
+   - Create。
+3. 上传文件：进 Space → **Files** → **Add file → Upload files**，把 `static_demo/` 里的
+   **4 个文件**传到 Space 根目录：
+   - `index.html`
+   - `app.js`
+   - `styles.css`
+   - `README.md`（它顶部的 `sdk: static` frontmatter 是 HF 识别所必需）
 
-**方式 A：网页上传（不用命令行，最简单）**
-- 进入刚建的 Space → **Files** 标签 → **Add file → Upload files**
-- 把整个项目拖上去（关键是这几样都要有）：`Dockerfile`、`README.md`、`app/` 整个文件夹
-- **不要传** `app/.env`（含你的 key）——它本来就被 gitignore，本地 git 里也没有
-- Commit
+   > 注意是把 `static_demo/` 里的文件传到 **Space 根目录**，不要把 `static_demo` 文件夹本身传进去。
+4. Commit。Space 会自动构建，几秒后状态变 **Running**。
+5. 打开顶部的 **App**，得到公开地址 `https://你的用户名-autumn-pm-coach.hf.space`，发给面试官。
 
-**方式 B：用 git 推送（如果你网络能连 HF 的 git）**
-```bash
-git clone https://huggingface.co/spaces/你的用户名/autumn-pm-coach
-# 把本项目文件复制进去（不含 app/.env、app/data/*.json），然后：
-git add Dockerfile README.md app tests docs DEPLOY_*.md
-git commit -m "Deploy to HF Spaces"
-git push
-```
-
-### 4. 配置环境变量（Secrets）
-进入 Space → **Settings** → **Variables and secrets** → 逐个 **New secret**：
-
-| 名称 | 值 | 说明 |
-|---|---|---|
-| `APP_DEMO_MODE` | `1` | 开启只读演示：访客免密浏览，写入/AI 需口令 |
-| `APP_ACCESS_TOKEN` | 你自定义的管理口令 | 只有你写入/生成新复盘时用；访客不需要 |
-| `GEMINI_API_KEY` | 你的 Gemini key | **建议用吊销重建后的新 key** |
-
-可选（多模型动态切换，填了就会自动兜底）：
-`OPENAI_API_KEY`、`DEEPSEEK_API_KEY`、`OPENROUTER_API_KEY`，以及 `MODEL_FALLBACK_ORDER`
-（默认 `gemini,openai,deepseek,openrouter,custom`）。
-
-> 注意：`Dockerfile` 里已把 `APP_DATA_DIR` 指到容器内目录，不用你配。
-
-### 5. 等待构建 → 打开
-- Space 会自动开始 **Building**（看 **Logs** 标签）。构建完状态变 **Running**。
-- 页面顶部的 **App** 就是你的公开地址，形如
-  `https://你的用户名-autumn-pm-coach.hf.space`
-- 打开它：**访客免密直接进工作台**，能看到一份带完整复盘的示例。把这个链接发给面试官即可。
+静态版不会休眠、秒开、永远免费。缺点：没有实时 AI 生成（但演示看的就是做好的复盘，够用）。
 
 ---
 
-## 关于数据持久化
-Spaces 免费层的磁盘是**临时的**，重启 / 休眠会重置。但这对 demo 无所谓——
-`APP_DEMO_MODE=1` 会在每次启动自动重新灌入示例，所以面试官永远看得到完整效果。
-你自己的真实面试记录，仍然用**本地** `python3 -B app/web_app.py`（存本机 `app/data/`）。
+## 方案二：Docker 完整版（付费 PRO，带实时 AI）
 
-## 关于休眠
-免费 Space 一段时间无访问会休眠，下次打开需要几十秒冷启动。发链接时可提一句"首次打开稍慢"。
-
-## 安全
-- 访客只读，改不了数据、也用不了会消耗配额的 AI 功能（那些需要 `APP_ACCESS_TOKEN`）。
-- 口令校验有 per-IP 限流：连续失败 5 次锁定 60 秒。
-- Space 设为 Public 只暴露 demo 示例，不含你的真实简历/面试隐私。
+如果你订阅了 HF PRO（可创建 Docker Space），就能跑带后端和实时 Gemini 的完整版。
+本仓库已备好 `Dockerfile` 与根 `README.md` 的 `sdk: docker` frontmatter。
