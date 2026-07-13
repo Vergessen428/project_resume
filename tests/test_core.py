@@ -57,6 +57,32 @@ class ReviewNormaliseTests(unittest.TestCase):
     def test_parse_json_tolerates_code_fences(self):
         self.assertEqual(_parse_json('```json\n{"a": 1}\n```'), {"a": 1})
 
+    def test_evidence_must_be_grounded_in_transcript(self):
+        transcript = "[01:10] 我：因为用户多了，报名应该也会更多。"
+        review = _normalise_review(
+            {
+                "summary": "s",
+                "gaps": [
+                    {"title": "真证据", "evidence": "因为用户多了，报名应该也会更多。", "improvement": "x"},
+                    {"title": "假证据", "evidence": "候选人未能通过 STAR 原则系统性展示。", "improvement": "y"},
+                ],
+                "skill_diagnosis": [{"skill_id": "m", "score": 2, "evidence": "凭空捏造的一句话"}],
+            },
+            transcript=transcript,
+        )
+        # A verbatim quote (timestamp/punctuation aside) survives.
+        self.assertIn("报名应该也会更多", review["gaps"][0]["evidence"])
+        # Model commentary that is not in the transcript is replaced with an explicit marker.
+        self.assertEqual(review["gaps"][1]["evidence"], "（无转写原文可佐证）")
+        self.assertEqual(review["skill_diagnosis"][0]["evidence"], "（无转写原文可佐证）")
+
+    def test_evidence_kept_when_transcript_missing(self):
+        # No transcript to check against: keep whatever the model returned, do not blank it.
+        review = _normalise_review(
+            {"summary": "s", "gaps": [{"title": "t", "evidence": "some quote", "improvement": "i"}]},
+        )
+        self.assertEqual(review["gaps"][0]["evidence"], "some quote")
+
 
 class GrowthMemoryTests(unittest.TestCase):
     def test_counts_only_reviewed_and_open_actions(self):
