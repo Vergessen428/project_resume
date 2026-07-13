@@ -1,0 +1,45 @@
+DEPLOY_HUGGINGFACE.md
+  s_530c13eb65dd40::t_6e6b9031acb7e7 10,32
+README.md
+  s_530c13eb65dd40::t_7e79080ad518d3 3,13-20,51,62-66,68-75,78,97-100,151,154,162,166,170,174,242
+app/core/research_grounding.py
+  s_530c13eb65dd40::t_0d074d912cb44b 9,21-26,44-60,65,99-245,251,258,284-287,545-548,550-559,566-567,579-580,609-610,625-626,638,644-647,650,658
+app/core/research_store.py
+  s_530c13eb65dd40::t_83a647ea15d984 120,132-134
+app/web/app.js
+  s_530c13eb65dd40::t_0eff67e8e72088 105,107,153-154,163
+app/web/styles.css
+  s_530c13eb65dd40::t_d86e013e028dca 44-47
+app/web_app.py
+  s_530c13eb65dd40::t_6251166c54b702 27,222-231,233-235,237
+static_demo/README.md
+  s_530c13eb65dd40::t_8d61c9c29f4abe 13,15-17,19-20
+static_demo/app.js
+  s_530c13eb65dd40::t_509a8a8b2286f6 125-127,134-142,183,200,255,266,289,292,296,306-307
+static_demo/demo_data.js
+  s_530c13eb65dd40::t_13cc4efacc49bc 44-45,55-56,58
+static_demo/index.html
+  s_530c13eb65dd40::t_c2a0634cec0b08 45,59,61
+static_demo/styles.css
+  s_530c13eb65dd40::t_8b180b9e989661 44-48
+tests/test_core.py
+  s_530c13eb65dd40::t_b49b668b1d5525 11,20,337,340,344-405
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "53d2ec6dac284e9f743e086229907bea789ffbfe",
+  "prompts": {},
+  "sessions": {
+    "s_530c13eb65dd40": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5117-aef6-7ed3-9420-0cf41c972c31",
+        "model": "unknown"
+      },
+      "human_author": "Vergessen428 <Vergessen428@users.noreply.github.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
