@@ -1,6 +1,6 @@
 """Unit tests for the interview assistant core logic.
 
-Run: python3 -m pytest tests/ -q   (or: python3 tests/test_core.py)
+Run: python3 -m unittest discover -s tests -v
 These cover pure logic only; no network or model calls.
 """
 
@@ -16,7 +16,22 @@ from core.interview_review import _normalise_review, _parse_json, sample_reviewe
 from core.growth_memory import build_candidate_memory
 from core.interview_store import InterviewStore
 from core.research_store import ResearchStore
-from core.research_grounding import run_research_agent, screen_candidate
+from core.research_grounding import build_search_query, derive_research_topic, normalise_platform, run_research_agent, screen_candidate
+from web_app import validate_interview, validate_research_candidate
+
+
+class WebValidationTests(unittest.TestCase):
+    def test_short_post_interview_note_is_valid(self):
+        self.assertIsNone(validate_interview({"company": "A", "role": "PM", "transcript": "答得还行"}))
+
+    def test_blank_interview_note_is_rejected(self):
+        self.assertEqual(
+            validate_interview({"company": "A", "role": "PM", "transcript": "   "}),
+            "请填写至少一段面试转写或面后速记。",
+        )
+
+    def test_search_candidate_can_be_stored_before_excerpt(self):
+        self.assertIsNone(validate_research_candidate({"title": "候选", "url": "https://www.xiaohongshu.com/explore/demo"}))
 
 
 class MultipartTests(unittest.TestCase):
@@ -43,6 +58,49 @@ class MultipartTests(unittest.TestCase):
 
 
 class ReviewNormaliseTests(unittest.TestCase):
+    def test_v2_dimensions_use_fixed_weights(self):
+        transcript = "定义转化率。拆成曝光到点击。需要做实验。"
+        review = _normalise_review({
+            "summary": "s",
+            "skill_diagnosis": [{
+                "skill_id": "metrics_experiment",
+                "score": 1,
+                "dimensions": [
+                    {"id": "definition", "score": 5, "status": "observed", "evidence": "定义转化率。", "rationale": "口径明确"},
+                    {"id": "decomposition", "score": 3, "status": "observed", "evidence": "拆成曝光到点击。", "rationale": "有链路"},
+                    {"id": "attribution", "score": 1, "status": "observed", "evidence": "需要做实验。", "rationale": "验证方向"},
+                    {"id": "experiment_quantify", "score": 3, "status": "observed", "evidence": "需要做实验。", "rationale": "尚无结果"},
+                ],
+            }],
+        }, transcript=transcript)
+        skill = review["skill_diagnosis"][0]
+        self.assertEqual(skill["exact_score"], 2.9)
+        self.assertEqual(skill["score"], 3)
+        self.assertEqual(skill["confidence"], "high")
+        self.assertEqual(review["review_quality"]["evidence_coverage"], 1.0)
+
+    def test_missing_dimension_evidence_lowers_confidence(self):
+        review = _normalise_review({
+            "summary": "s",
+            "skill_diagnosis": [{
+                "skill_id": "metrics_experiment",
+                "score": 5,
+                "dimensions": [{"id": "attribution", "score": 5, "status": "observed", "evidence": "没有这句话", "rationale": "x"}],
+            }],
+        }, transcript="只有一句很短的记录")
+        skill = review["skill_diagnosis"][0]
+        self.assertEqual(skill["confidence"], "low")
+        self.assertEqual(skill["evidence_coverage"], 0.0)
+        self.assertEqual(review["score_summary"]["training_band"], "证据不足")
+
+    def test_legacy_review_keeps_string_practice_field(self):
+        review = _normalise_review({
+            "summary": "s",
+            "skill_diagnosis": [{"skill_id": "metrics_experiment", "score": 2, "next_practice": "补充指标口径"}],
+        })
+        skill = review["skill_diagnosis"][0]
+        self.assertEqual(skill["next_practice"], "补充指标口径")
+        self.assertEqual(skill["practice_plan"]["action"], "补充指标口径")
     def test_scores_are_clamped_and_actions_get_ids(self):
         review = _normalise_review({
             "summary": "s",
@@ -171,6 +229,14 @@ class GrowthMemoryTests(unittest.TestCase):
 
 
 class ResearchStoreTests(unittest.TestCase):
+    def test_candidate_metadata_survives_storage_without_excerpt(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store = ResearchStore(os.path.join(directory, "research.json"))
+            record = store.create({"title": "候选", "url": "https://www.xiaohongshu.com/explore/demo", "status": "candidate", "platform_id": "xiaohongshu", "search_query": "site:xiaohongshu.com/explore 候选", "provenance_status": "manual_check_required"})
+            self.assertEqual(record["platform_id"], "xiaohongshu")
+            self.assertEqual(record["provenance_status"], "manual_check_required")
+            self.assertEqual(record["source_text"], "")
+
     def test_assessment_below_threshold_forces_needs_review(self):
         with tempfile.TemporaryDirectory() as tmp:
             store = ResearchStore(os.path.join(tmp, "research.json"))
@@ -212,6 +278,14 @@ class DemoSeedTests(unittest.TestCase):
 
 
 class NoteQuestionsTests(unittest.TestCase):
+    class _CaptureModel:
+        def __init__(self):
+            self.prompt = ""
+
+        def complete(self, prompt):
+            self.prompt = prompt
+            return '{"questions": [{"id": "hit_1", "question": "查指标", "why_asked": "JD 要求"}]}'
+
     class _FailModel:
         def complete(self, prompt):  # noqa: ARG002
             raise AssertionError("model must not be called when JD/resume missing")
@@ -241,8 +315,55 @@ class NoteQuestionsTests(unittest.TestCase):
         for q in out["questions"]:
             self.assertTrue(q["question"])
 
+    def test_question_normalisation_preserves_research_basis(self):
+        out = _normalise_note_questions({"questions": [{"id": "hit_1", "question": "查指标", "research_basis": ["候选资料", "第二条"]}]})
+        self.assertEqual(out["questions"][0]["research_basis"], ["候选资料", "第二条"])
+
+    def test_question_prompt_contains_jd_analysis_and_research_leads(self):
+        model = self._CaptureModel()
+        generate_note_questions(
+            model,
+            "负责增长和指标设计",
+            "做过一个增长项目",
+            [{"title": "公开候选", "platform": "小红书", "provenance_status": "manual_check_required"}],
+            {"search_topics": ["指标与实验"]},
+        )
+        self.assertIn("指标与实验", model.prompt)
+        self.assertIn("公开候选", model.prompt)
+        self.assertIn("不是事实证据", model.prompt)
+
+    def test_jd_topics_become_bounded_search_intent(self):
+        topic = derive_research_topic("", {"search_topics": ["指标设计", "项目深挖"], "keywords": ["实验"]})
+        self.assertIn("指标设计", topic)
+        self.assertIn("项目深挖", topic)
+
 
 class ResearchAgentTests(unittest.TestCase):
+    def test_platform_query_uses_public_xiaohongshu_scope(self):
+        query = build_search_query("示例公司", "产品经理", "一面", "指标", "xiaohongshu")
+        self.assertIn("site:xiaohongshu.com/explore", query)
+        self.assertEqual(normalise_platform("xiaohongshu"), "xiaohongshu")
+        self.assertEqual(normalise_platform("unsupported"), "all")
+
+    def test_agent_records_platform_scoped_query(self):
+        calls = []
+
+        def plan(context):
+            return {"action": "search", "query": "公司 岗位", "reasoning": "平台限定"}
+
+        def search(query):
+            calls.append(query)
+            return []
+
+        result = run_research_agent(
+            object(), "公司", "岗位", "一面", platform="xiaohongshu", target=1, max_rounds=1,
+            plan_fn=plan, search_fn=search, screen_fn=lambda candidate: {"recommendation": "needs_review"},
+        )
+        self.assertIn("site:xiaohongshu.com/explore", calls[0])
+        self.assertEqual(result["search_meta"]["platform"], "xiaohongshu")
+        self.assertEqual(result["search_meta"]["result_count"], 0)
+        self.assertTrue(result["search_meta"]["empty_reason"])
+
     def test_retries_with_new_query_until_enough(self):
         queries = []
 
@@ -308,6 +429,29 @@ class ResearchAgentTests(unittest.TestCase):
         self.assertEqual(out["recommendation"], "dismissed")  # not in whitelist -> dropped
         self.assertIn("relevance", out)
         self.assertNotIn("confidence", out)   # naming isolation from usability confidence
+
+    def test_screen_candidate_uses_fixed_weighted_relevance(self):
+        class _Model:
+            def complete(self, prompt):  # noqa: ARG002
+                return (
+                    '{"recommendation":"needs_review",'
+                    '"relevance_breakdown":{"company_match":100,"role_match":80,'
+                    '"round_match":60,"topic_match":40,"interview_specificity":20,"recency":0},'
+                    '"reason":"相关，但需要打开原文确认"}'
+                )
+
+        out = screen_candidate(_Model(), {"url": "http://a", "title": "t"}, "字节", "PM", "一面", "指标")
+        self.assertEqual(out["relevance"], 67)
+        self.assertEqual(out["relevance_breakdown"]["role_match"], 80)
+
+    def test_screen_candidate_drops_malformed_model_json(self):
+        class _Model:
+            def complete(self, prompt):  # noqa: ARG002
+                return '{"recommendation":"needs_review",}'
+
+        out = screen_candidate(_Model(), {"url": "http://a", "title": "t"}, "字节", "PM", "一面")
+        self.assertEqual(out["recommendation"], "dismissed")
+        self.assertEqual(out["relevance"], 0)
 
 
 if __name__ == "__main__":

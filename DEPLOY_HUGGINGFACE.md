@@ -8,7 +8,7 @@
 ## 方案一：免费静态展示版（推荐，0 成本）
 
 用 `static_demo/` 这个纯前端目录，传到 HF **免费 Static Space**。访客打开就能看到完整界面
-和一份带原文证据的示例复盘；写操作（保存/AI/上传/搜索）会提示"需在完整版体验"。
+和一份带原文证据的深度示例复盘；写操作（保存/AI/上传）会提示"需在完整版体验"，公开搜索按钮只展示静态的查询轨迹与人工确认状态。
 
 ### 步骤
 
@@ -19,9 +19,10 @@
    - Visibility：**Public**
    - Create。
 3. 上传文件：进 Space → **Files** → **Add file → Upload files**，把 `static_demo/` 里的
-   **4 个文件**传到 Space 根目录：
+   **5 个文件**传到 Space 根目录：
    - `index.html`
    - `app.js`
+   - `demo_data.js`
    - `styles.css`
    - `README.md`（它顶部的 `sdk: static` frontmatter 是 HF 识别所必需）
 

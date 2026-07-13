@@ -133,6 +133,12 @@ class InterviewStore:
             result[field] = value[:limit]
         if "jd_analysis" in payload:
             result["jd_analysis"] = payload.get("jd_analysis") if isinstance(payload.get("jd_analysis"), dict) else None
+        if "research_context" in payload:
+            sources = payload.get("research_context")
+            result["research_context"] = [
+                {key: str(item.get(key, ""))[:900] for key in ("title", "url", "platform", "summary", "search_query", "provenance_status")}
+                for item in sources[:8] if isinstance(item, dict)
+            ] if isinstance(sources, list) else []
         if not partial:
             result.setdefault("status", "待复盘")
             result.setdefault("personal_notes", "")

@@ -211,21 +211,29 @@ docs/                 # 项目文档与界面截图
 
 ## 🌐 部署
 
-两种部署都默认走**只读演示**（`APP_DEMO_MODE=1`）：访客免密浏览完整示例，
-但保存 / 生成 / 搜索等写操作需要管理口令（只有你有）。
+当前公开展示以**静态部署**为准：`static_demo/` 是纯前端 Mock 版，部署到 Hugging Face
+Static Space 即可拿到公开可点的展示链接，见 [DEPLOY_HUGGINGFACE.md](./DEPLOY_HUGGINGFACE.md)。
+它会明确标注合成演示资料，保存 / AI 复盘 / 上传 / 联网搜索等写操作不会伪装成真实成功。
 
-- **免费静态演示**：`static_demo/` 是纯前端 Mock 版，部署到 Hugging Face Static Space
-  即可拿到公开可点的展示链接，见 [DEPLOY_HUGGINGFACE.md](./DEPLOY_HUGGINGFACE.md)。
-- **带后端的在线演示**：`render.yaml` 已配置为 Render 免费层 + 只读演示模式，
-  见 [DEPLOY_RENDER.md](./DEPLOY_RENDER.md)。若要长期在线存自己的真实数据，
-  按该文档「方案二」改用付费持久盘并去掉 `APP_DEMO_MODE`。
-- 部署到公网时**务必设置 `APP_ACCESS_TOKEN`**。
+### PM Coach V2
+
+复盘保留六项 PM 能力，但每项拆成四个有权重的可观察子维度。后端校验原文证据、计算确定性的 `exact_score`，再映射到 1–5 分，并输出训练分、证据覆盖度、置信度、能力缺口、下一条追问和训练验收标准。训练分只表示练习优先级，不代表录用概率或候选人价值。
+
+面经资料库支持 `全网 | 小红书 | 牛客`。解析 JD 后会自动生成搜索主题和同义词，触发公开资料发现，并自动收录标题、原帖链接、平台、轮次和查询词。小红书的“公开路由”指 `site:xiaohongshu.com/explore` 这类公开网页搜索限定，不是登录态 API 或 Cookie 抓取；原帖正文仍需人工打开后才能作为证据，不会把搜索摘要伪装成原文。
+
+面后速记问题会同时读取 JD 结构化拆解、自动收录的候选资料和已确认资料。候选资料只影响“应该追问什么”，不会改变“面试中实际发生了什么”；最终复盘仍只用转写原文作为表现证据。
+
+静态 Demo 的 `demo_data.js` 保存独立演示数据，页面展示完整六项诊断和一张明确标注为合成演示的小红书候选卡。搜索按钮可演示查询轨迹和来源状态，写操作仍显示只读提示。
+
+`render.yaml` 和 [DEPLOY_RENDER.md](./DEPLOY_RENDER.md) 保留为可选的带后端方案；如果当前
+Render 无法创建或构建，忽略它即可，不影响静态展示。后端公网部署时仍**务必设置
+`APP_ACCESS_TOKEN`**；演示模式没有管理口令时现在会强制只读。
 
 ## ✅ 测试
 
 ```bash
-python3 -m pytest tests/ -q
-# 或：python3 tests/test_core.py
+python3 -m unittest discover -s tests -v
+# 若本机已安装 pytest，也可运行：python3 -m pytest tests/ -q
 ```
 
 ## 📄 许可

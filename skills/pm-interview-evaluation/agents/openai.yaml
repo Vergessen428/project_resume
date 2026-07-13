@@ -1,0 +1,4 @@
+interface:
+  display_name: PM Interview Evaluation
+  short_description: Evidence-based PM interview diagnosis and public research
+  default_prompt: Review this PM interview with transcript evidence, deterministic skill dimensions, and next-step practice criteria. Keep search relevance separate from source credibility.

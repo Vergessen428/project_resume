@@ -36,6 +36,59 @@ PM_SKILLS: List[Dict[str, str]] = [
     },
 ]
 
+# Each PM skill is scored through four observable signals. The model may describe
+# the signal, but the backend owns the IDs and weights so scores remain comparable
+# across reviews and across the long-term memory view.
+PM_SKILL_DIMENSIONS: Dict[str, List[Dict[str, Any]]] = {
+    "product_sense": [
+        {"id": "user_problem", "label": "用户问题", "weight": 30},
+        {"id": "goal_definition", "label": "目标定义", "weight": 20},
+        {"id": "tradeoff", "label": "方案取舍", "weight": 30},
+        {"id": "prioritization", "label": "优先级判断", "weight": 20},
+    ],
+    "story_ownership": [
+        {"id": "scope", "label": "职责边界", "weight": 30},
+        {"id": "decision", "label": "关键决策", "weight": 30},
+        {"id": "collaboration", "label": "协作推进", "weight": 15},
+        {"id": "result_learning", "label": "结果复盘", "weight": 25},
+    ],
+    "metrics_experiment": [
+        {"id": "definition", "label": "指标定义", "weight": 25},
+        {"id": "decomposition", "label": "指标拆解", "weight": 20},
+        {"id": "attribution", "label": "归因意识", "weight": 30},
+        {"id": "experiment_quantify", "label": "实验与量化", "weight": 25},
+    ],
+    "execution_collaboration": [
+        {"id": "planning", "label": "计划与风险", "weight": 25},
+        {"id": "alignment", "label": "跨团队对齐", "weight": 25},
+        {"id": "resource_tradeoff", "label": "资源取舍", "weight": 20},
+        {"id": "closure", "label": "落地闭环", "weight": 30},
+    ],
+    "structured_communication": [
+        {"id": "structure", "label": "表达结构", "weight": 30},
+        {"id": "directness", "label": "结论先行", "weight": 20},
+        {"id": "precision", "label": "信息精确度", "weight": 25},
+        {"id": "probe_response", "label": "追问应对", "weight": 25},
+    ],
+    "business_context": [
+        {"id": "jd_link", "label": "JD 连接", "weight": 30},
+        {"id": "user_business", "label": "用户与业务", "weight": 25},
+        {"id": "market_context", "label": "市场语境", "weight": 20},
+        {"id": "role_fit", "label": "岗位适配", "weight": 25},
+    ],
+}
+
+DIAGNOSTIC_STATUSES = {"observed", "missing", "contradicted", "not_applicable", "unverified"}
+
+EVIDENCE_PROFILE_FIELDS = {
+    "specificity": "是否有具体场景、对象、时间或数字",
+    "ownership": "是否能区分个人动作与团队动作",
+    "causality": "是否说明判断依据、因果假设或验证方式",
+    "result_quality": "是否有口径清楚的结果和影响",
+    "reflection": "是否能说明复盘、边界和下一次调整",
+    "probe_resilience": "面对追问是否补充完整而不改口或跳题",
+}
+
 
 # Controlled vocabulary of recurring weakness tags, so long-term memory can count
 # "the same problem" across interviews even when the model phrases the title differently.
@@ -92,13 +145,47 @@ PM_SCORE_ANCHORS: Dict[str, Dict[int, str]] = {
     },
 }
 
+PM_SCORE_GUIDE: Dict[int, str] = {
+    1: "未展示：没有可核对的行为或理解，或回答与问题明显不匹配。",
+    2: "偏弱：提到相关点，但缺少关键定义、个人动作、取舍或结果。",
+    3: "合格：能给出基本完整的例子和判断，但仍有一处重要环节不完整。",
+    4: "较强：行为具体，能解释取舍、协作和结果，只有少量细节缺口。",
+    5: "优秀：证据具体且闭环，能连接用户/业务、指标、取舍、结果和复盘。",
+}
+
 
 def prompt_rubric() -> str:
     return "\n".join("- %s (%s): %s" % (item["id"], item["name"], item["focus"]) for item in PM_SKILLS)
 
 
-def public_skills() -> List[Dict[str, str]]:
-    return [{"id": item["id"], "name": item["name"], "focus": item["focus"]} for item in PM_SKILLS]
+def dimension_prompt() -> str:
+    lines = []
+    for skill in PM_SKILLS:
+        dimensions = PM_SKILL_DIMENSIONS[skill["id"]]
+        rendered = "; ".join(
+            "%s=%s（%s%%）" % (item["id"], item["label"], item["weight"])
+            for item in dimensions
+        )
+        lines.append("- %s（%s）: %s" % (skill["id"], skill["name"], rendered))
+    return "\n".join(lines)
+
+
+def evidence_profile_prompt() -> str:
+    return "; ".join("%s=%s（0-3）" % (key, label) for key, label in EVIDENCE_PROFILE_FIELDS.items())
+
+
+def public_skills() -> List[Dict[str, Any]]:
+    return [
+        {
+            "id": item["id"],
+            "name": item["name"],
+            "focus": item["focus"],
+            "dimensions": [dict(dimension) for dimension in PM_SKILL_DIMENSIONS[item["id"]]],
+            "score_anchors": {str(level): text for level, text in PM_SCORE_ANCHORS[item["id"]].items()},
+            "score_guide": {str(level): text for level, text in PM_SCORE_GUIDE.items()},
+        }
+        for item in PM_SKILLS
+    ]
 
 
 def gap_tag_ids() -> set:

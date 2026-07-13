@@ -1,6 +1,7 @@
 # 部署到 Render
 
-有两种部署目标，`render.yaml` 默认配置的是**方案一（免费展示 demo）**。
+Render 是可选的后端部署方案。当前公开展示建议使用 `static_demo/` 的 Hugging Face Static
+Space；如果 Render 当前不可用，不影响静态展示。
 
 ---
 

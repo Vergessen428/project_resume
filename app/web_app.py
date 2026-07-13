@@ -24,7 +24,7 @@ from core.interview_store import InterviewStore
 from core.model_provider import build_model, load_dotenv
 from core.multipart import parse_multipart
 from core.pm_skills import public_skills
-from core.research_grounding import ResearchGroundingError, assess_public_source, discover_public_sources, run_research_agent
+from core.research_grounding import ResearchGroundingError, assess_public_source, build_search_query, derive_research_topic, discover_public_sources, normalise_platform, run_research_agent
 from core.research_store import ResearchStore
 from core.resume_store import ResumeStore
 
@@ -68,8 +68,8 @@ def validate_interview(payload: Dict[str, Any]) -> Optional[str]:
     if not str(payload.get("role", "")).strip():
         return "请填写投递岗位。"
     transcript = str(payload.get("transcript", "")).strip()
-    if len(transcript) < 30:
-        return "请粘贴或导入至少一段面试转写/复盘记录。"
+    if not transcript:
+        return "请填写至少一段面试转写或面后速记。"
     return None
 
 
@@ -81,6 +81,15 @@ def validate_research(payload: Dict[str, Any]) -> Optional[str]:
         return "请填写原帖的完整 http(s) 链接。"
     if len(str(payload.get("source_text", "")).strip()) < 80:
         return "请粘贴至少 80 个字的原帖正文摘录，避免 AI 只凭标题判断。"
+    return None
+
+
+def validate_research_candidate(payload: Dict[str, Any]) -> Optional[str]:
+    if not str(payload.get("title", "")).strip():
+        return "搜索候选缺少标题。"
+    url = str(payload.get("url", "")).strip()
+    if not (url.startswith("https://") or url.startswith("http://")):
+        return "搜索候选缺少完整 http(s) 链接。"
     return None
 
 
@@ -198,10 +207,30 @@ class AssistantHandler(BaseHTTPRequestHandler):
                 return
             self.send_json({"ok": True, "research": RESEARCH_STORE.create(payload)}, 201)
             return
+        if path == "/api/research/candidate":
+            candidate = payload.get("candidate") if isinstance(payload.get("candidate"), dict) else payload
+            candidate = dict(candidate)
+            error = validate_research_candidate(candidate)
+            if error:
+                self.send_json({"ok": False, "error": error}, 400)
+                return
+            url = str(candidate.get("url", "")).strip()
+            existing = next((item for item in RESEARCH_STORE.list() if item.get("url") == url), None)
+            if existing:
+                self.send_json({"ok": True, "research": existing, "existing": True})
+                return
+            candidate.update({
+                "status": "candidate",
+                "source_text": "",
+                "notes": "搜索候选已自动识别标题、链接和平台；待打开原帖摘录正文后再预审。",
+            })
+            self.send_json({"ok": True, "research": RESEARCH_STORE.create(candidate), "existing": False}, 201)
+            return
         if path == "/api/research/discover":
             company = str(payload.get("company", "")).strip()
             role = str(payload.get("role", "")).strip()
-            topic = str(payload.get("topic", "")).strip()
+            topic = derive_research_topic(payload.get("topic", ""), payload.get("jd_analysis"), payload.get("job_description", ""))
+            platform = normalise_platform(payload.get("platform"))
             if not company and not role and not topic:
                 self.send_json({"ok": False, "error": "请至少填写公司、岗位或搜索主题。"}, 400)
                 return
@@ -213,44 +242,70 @@ class AssistantHandler(BaseHTTPRequestHandler):
                     role,
                     str(payload.get("round_name", "")).strip(),
                     topic,
+                    platform,
                 )
-                self.send_json({"ok": True, "candidates": candidates})
+                self.send_json({
+                    "ok": True,
+                    "candidates": candidates,
+                    "search_meta": {
+                        "platform": platform,
+                        "platform_label": {"all": "全网", "xiaohongshu": "小红书", "nowcoder": "牛客"}[platform],
+                        "queries_tried": [build_search_query(company, role, str(payload.get("round_name", "")).strip(), topic, platform)],
+                        "result_count": len(candidates),
+                        "empty_reason": "未发现通过来源校验的候选资料。" if not candidates else "",
+                    },
+                })
             except ResearchGroundingError as exc:
                 self.send_json({"ok": False, "error": str(exc)}, 502)
+            except RuntimeError as exc:
+                self.send_json({"ok": False, "error": str(exc)}, 503)
+            except Exception:
+                self.send_json({"ok": False, "error": "联网搜索失败，请检查模型配置后重试。"}, 502)
             return
         if path == "/api/research/agent":
             company = str(payload.get("company", "")).strip()
             role = str(payload.get("role", "")).strip()
             round_name = str(payload.get("round_name", "")).strip()
-            topic = str(payload.get("topic", "")).strip()
+            topic = derive_research_topic(payload.get("topic", ""), payload.get("jd_analysis"), payload.get("job_description", ""))
+            platform = normalise_platform(payload.get("platform"))
             if not company and not role and not topic:
                 self.send_json({"ok": False, "error": "请至少填写公司、岗位或搜索主题。"}, 400)
                 return
             try:
                 model = build_model()
-                result = run_research_agent(model, company, role, round_name, topic)
+                result = run_research_agent(model, company, role, round_name, topic, platform=platform)
                 self.send_json({
                     "ok": True,
                     "collected": result["collected"],
                     "trace": result["trace"],
                     "stop_reason": result["stop_reason"],
                     "found_enough": result["found_enough"],
+                    "search_meta": result.get("search_meta", {}),
                 })
             except ResearchGroundingError as exc:
                 self.send_json({"ok": False, "error": str(exc)}, 502)
+            except RuntimeError as exc:
+                self.send_json({"ok": False, "error": str(exc)}, 503)
+            except Exception:
+                self.send_json({"ok": False, "error": "智能调研失败，请检查模型配置后重试。"}, 502)
             return
         if path == "/api/note-questions":
             jd = str(payload.get("job_description", "")).strip()
             resume = str(payload.get("resume_context", "")).strip()
             iid = str(payload.get("interview_id", "")).strip()
+            sources = payload.get("research_context") if isinstance(payload.get("research_context"), list) else []
             if iid:
                 record = STORE.get(iid)
                 if record:
                     jd = jd or str(record.get("job_description", ""))
                     resume = resume or str(record.get("resume_context", ""))
+                    sources = sources or record.get("research_context", [])
             try:
                 model = build_model()
-                result = generate_note_questions(model, jd, resume)
+                analysis = payload.get("jd_analysis") if isinstance(payload.get("jd_analysis"), dict) else {}
+                if iid and record:
+                    analysis = analysis or record.get("jd_analysis") or {}
+                result = generate_note_questions(model, jd, resume, sources + RESEARCH_STORE.approved_for(str(payload.get("company", "")), str(payload.get("role", ""))), analysis)
                 self.send_json({"ok": True, "questions": result["questions"]})
             except RuntimeError as exc:
                 self.send_json({"ok": False, "error": str(exc)}, 503)
@@ -294,7 +349,7 @@ class AssistantHandler(BaseHTTPRequestHandler):
                 review = generate_interview_review(
                     model,
                     record,
-                    RESEARCH_STORE.approved_for(record.get("company", ""), record.get("role", "")),
+                    RESEARCH_STORE.approved_for(record.get("company", ""), record.get("role", "")) + record.get("research_context", []),
                     build_candidate_memory(STORE.records()),
                 )
                 updated = STORE.save_review(parts[2], review)
@@ -483,7 +538,9 @@ class AssistantHandler(BaseHTTPRequestHandler):
         return hmac.compare_digest(required_token, supplied_token)
 
     def can_write(self) -> bool:
-        """Full-permission caller: no token configured, or a valid token supplied."""
+        """Return whether the caller may perform writes under the current deployment policy."""
+        if DEMO_MODE and not os.environ.get("APP_ACCESS_TOKEN", "").strip():
+            return False
         return self.has_valid_token()
 
     def has_api_access(self) -> bool:
@@ -496,11 +553,13 @@ class AssistantHandler(BaseHTTPRequestHandler):
 
     def require_write(self) -> bool:
         """Write-level gate for POST/PUT/PATCH."""
-        if not os.environ.get("APP_ACCESS_TOKEN", "").strip():
-            return True
+        required_token = os.environ.get("APP_ACCESS_TOKEN", "").strip()
         if not DEMO_MODE:
             # The read gate already validated the token on these routes.
             return True
+        if not required_token:
+            self.send_json({"ok": False, "error": "演示模式未设置管理口令，当前服务仅允许只读访问。"}, 503)
+            return False
         return self._token_or_error(403, "演示模式为只读。保存、AI 复盘和联网搜索需要管理口令。")
 
     def _token_or_error(self, fail_status: int, fail_error: str) -> bool:
