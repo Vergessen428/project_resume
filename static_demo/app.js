@@ -5,7 +5,7 @@
 
 const DEMO = window.AUTUMN_DEMO_DATA;
 
-const DEMO_WRITE_MESSAGE = "这是静态演示版：本次操作只读展示，未保存、未联网、未调用模型；保存、真实搜索和 AI 处理需要在完整版中体验。";
+const DEMO_WRITE_MESSAGE = "这是静态 Demo：本次操作只读展示，未保存、未联网、未调用模型；保存、真实搜索和 AI 处理需要在完整版中体验。";
 
 // Route /api/* to canned data. Any write (non-GET) returns the demo message.
 window.fetch = async (url, options = {}) => {
