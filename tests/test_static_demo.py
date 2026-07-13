@@ -144,6 +144,7 @@ class StaticDemoSmokeTests(unittest.TestCase):
         self.assertIn("search_meta", data)
         self.assertIn("relevance_breakdown", data)
         self.assertIn('provenance_status: "manual_check_required"', data)
+        self.assertIn("静态演示不联网", data)
         self.assertIn("action_key", data)
         self.assertIn("source_skill_ids", data)
         self.assertIn("source_gap_ids", data)

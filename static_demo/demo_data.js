@@ -250,8 +250,8 @@ window.AUTUMN_DEMO_DATA = (() => {
       { url: "https://www.xiaohongshu.com/explore/demo-pm-coach", title: "小红书公开面经候选（演示资料）", platform: "小红书", summary: "静态演示用的合成候选：展示指标定义、A/B 实验与归因主题的相关度提示，不对应可验证原帖。", published_date: "", source_kind: "demo_synthetic", provenance_status: "manual_check_required", screening: { recommendation: "needs_review", relevance: 72, reason: "演示相关度提示，需打开真实原帖确认" } },
     ],
     trace: [
-      { round: 1, reasoning: "先用公司+岗位+一面直搜", action: "search", query: "字节 产品经理 一面 面经", added: 0 },
-      { round: 2, reasoning: "首轮无达标，换岗位同义词并保持平台限定", action: "search", query: "site:xiaohongshu.com/explore 字节跳动 AI产品 实习 一面", added: 1 },
+      { round: 1, reasoning: "静态演示不联网；先用公司+岗位+一面直搜", action: "search", query: "字节 产品经理 一面 面经", added: 0 },
+      { round: 2, reasoning: "静态演示不联网；首轮无达标，换岗位同义词并保持平台限定", action: "search", query: "site:xiaohongshu.com/explore 字节跳动 AI产品 实习 一面", added: 1 },
       { round: 3, reasoning: "已收集到 1 条待确认，预算内主动停", action: "stop", stop_reason: "达成部分目标，交人工摘录", added: 0 },
     ],
     stop_reason: "达成部分目标，交人工摘录",
