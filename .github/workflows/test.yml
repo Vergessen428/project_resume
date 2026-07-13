@@ -41,6 +41,16 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Serve static demo
         run: python -m http.server 8766 --bind 127.0.0.1 --directory static_demo > /tmp/autumn-pm-coach-static.log 2>&1 &
+      - name: Wait for static demo
+        run: |
+          for attempt in {1..15}; do
+            if curl --fail --silent --show-error http://127.0.0.1:8766/ > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/autumn-pm-coach-static.log
+          exit 1
       - name: Run browser interaction smoke
         run: node scripts/browser_demo_smoke.mjs
       - name: Upload browser smoke artifacts
