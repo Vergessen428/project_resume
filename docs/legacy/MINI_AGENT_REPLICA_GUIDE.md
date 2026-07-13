@@ -659,31 +659,27 @@ final answer
 每一次工具调用都能在日志中回放。
 ```
 
-## 可以直接讲给面试官的版本
+## 一句话回顾
 
 ### 30 秒版
 
-> 我没有一开始复刻 OpenClaw 的完整产品，而是先复刻了 agent runtime 的最小闭环。我的版本从 CLI 输入开始，维护 session，组装上下文，调用 LLM，让模型通过 tool schema 选择工具，再由 runtime 做权限检查和工具执行，最后把工具结果回填给模型生成最终答案。核心模块包括 input adapter、session store、context builder、model client、tool registry、policy engine、agent loop、skill loader 和日志系统。
+> 这个复刻没有一开始就还原完整产品，而是先复刻了 agent runtime 的最小闭环：从 CLI 输入开始，维护 session，组装上下文，调用 LLM，让模型通过 tool schema 选择工具，再由 runtime 做权限检查和工具执行，最后把工具结果回填给模型生成最终答案。核心模块包括 input adapter、session store、context builder、model client、tool registry、policy engine、agent loop、skill loader 和日志系统。
 
 ### 2 分钟版
 
-> 我把 agent 拆成了三层：交互层、运行时层、能力层。交互层第一版只做 CLI，因为 Telegram、飞书这些本质都是 adapter。运行时层是核心，包括 session、context builder、model client、agent loop 和 policy engine。能力层包括 tools 和 skills，tools 是可执行能力，比如读文件、写文件；skills 是可复用工作流，比如面试准备或项目复盘。
+> agent 被拆成三层：交互层、运行时层、能力层。交互层第一版只做 CLI，因为 Telegram、飞书这些本质都是 adapter。运行时层是核心，包括 session、context builder、model client、agent loop 和 policy engine。能力层包括 tools 和 skills，tools 是可执行能力，比如读文件、写文件；skills 是可复用工作流，比如项目复盘。
 >
-> 我重点实现的是 agent loop：每轮先构建上下文，把当前任务、历史消息、可用工具和 skill 指令发给模型；如果模型请求工具调用，runtime 先做 schema 校验和权限检查，再执行工具；工具结果会作为 tool message 回填给模型，直到模型输出 final answer 或达到 step limit。
+> 重点实现的是 agent loop：每轮先构建上下文，把当前任务、历史消息、可用工具和 skill 指令发给模型；如果模型请求工具调用，runtime 先做 schema 校验和权限检查，再执行工具；工具结果会作为 tool message 回填给模型，直到模型输出 final answer 或达到 step limit。
 >
-> 这个项目真正的难点不是调模型 API，而是上下文管理、工具调用可靠性和安全边界。比如模型可能被文件里的 prompt injection 诱导，所以我不能只靠 prompt 说“不要读密钥”，而是必须在 policy 层限制只能访问 workspace 内文件，并记录每次工具调用。
+> 真正的难点不是调模型 API，而是上下文管理、工具调用可靠性和安全边界。比如模型可能被文件里的 prompt injection 诱导，所以不能只靠 prompt 说“不要读密钥”，而是必须在 policy 层限制只能访问 workspace 内文件，并记录每次工具调用。
 
-### 被问“你怎么验证它是 agent，不是 chatbot”
+### 怎么验证它是 agent，不是 chatbot
 
-可以回答：
+> 设计了三个实验。第一个是读取单个文件并总结，验证模型能选择 read_file 工具。第二个是读取多个 md 文件再写 summary.md，验证多步 tool loop。第三个是让它读取 workspace 外的 SSH key，预期 policy 拒绝，验证它不是模型直接拥有系统权限，而是所有动作都经过 runtime 管控。
 
-> 我设计了三个实验。第一个是读取单个文件并总结，验证模型能选择 read_file 工具。第二个是读取多个 md 文件再写 summary.md，验证多步 tool loop。第三个是让它读取 workspace 外的 SSH key，预期 policy 拒绝，验证它不是模型直接拥有系统权限，而是所有动作都经过 runtime 管控。
+### 最大的难点
 
-### 被问“你遇到的最大难点”
-
-可以回答：
-
-> 最大难点是模型输出不稳定和工具权限边界。模型有时会选错工具、传错参数，甚至被文件内容诱导。所以我做了三层控制：第一层是 tool schema 校验参数，第二层是 policy engine 限制路径和危险动作，第三层是 run log 记录每一步，方便回放和 debug。这样 agent 即使推理错了，也不会直接越权执行。
+> 最大难点是模型输出不稳定和工具权限边界。模型有时会选错工具、传错参数，甚至被文件内容诱导。所以做了三层控制：第一层是 tool schema 校验参数，第二层是 policy engine 限制路径和危险动作，第三层是 run log 记录每一步，方便回放和 debug。这样 agent 即使推理错了，也不会直接越权执行。
 
 ## 你最后应该产出的东西
 

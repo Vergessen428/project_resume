@@ -39,7 +39,7 @@ mini-agent-runtime
 
 - OpenClaw 本身也是 Node/TypeScript 生态，迁移理解成本低。
 - LLM tool calling、JSON schema、CLI、文件工具都好实现。
-- 面试里讲工程结构也比较自然。
+- 工程结构清晰，讲清楚也比较自然。
 
 推荐技术：
 
@@ -647,19 +647,19 @@ logs
 
 这是更稳的工程顺序。
 
-## 面试项目讲法
+## 项目讲法
 
-你可以把这个项目讲成：
+可以把这个项目讲成：
 
-> 我从零实现了一个 mini agent runtime，不是简单调用 LLM API。它包含 session、context builder、model client、tool registry、policy engine、agent loop、skill loader 和日志系统。用户输入任务后，runtime 会组装上下文让模型判断是否需要工具；模型如果请求工具，系统先做 schema 和 policy 校验，再执行工具，把结果回填给模型，直到生成最终答案或达到步骤上限。
+> 从零实现了一个 mini agent runtime，不是简单调用 LLM API。它包含 session、context builder、model client、tool registry、policy engine、agent loop、skill loader 和日志系统。用户输入任务后，runtime 会组装上下文让模型判断是否需要工具；模型如果请求工具，系统先做 schema 和 policy 校验，再执行工具，把结果回填给模型，直到生成最终答案或达到步骤上限。
 
-如果面试官问“这和 prompt engineering 有什么区别”，回答：
+「这和 prompt engineering 有什么区别」：
 
 > Prompt engineering 是告诉模型应该怎么回答，agent runtime 是控制模型如何做事。比如 prompt 可以写“不要读隐私文件”，但 runtime 会在 policy 层直接禁止 workspace 外路径。前者是软约束，后者是硬约束。
 
-如果面试官问“你怎么证明它不是 chatbot”，回答：
+「怎么证明它不是 chatbot」：
 
-> 我做了三个实验：单文件读取总结、多文件读取后写 summary、越权读取 SSH key 被拒绝。chatbot 只能生成文字，而我的 agent 会通过 tool loop 改变 workspace 内文件，同时所有动作都经过权限检查和日志记录。
+> 做了三个实验：单文件读取总结、多文件读取后写 summary、越权读取 SSH key 被拒绝。chatbot 只能生成文字，而这个 agent 会通过 tool loop 改变 workspace 内文件，同时所有动作都经过权限检查和日志记录。
 
 ## 第一版最容易踩的坑
 

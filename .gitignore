@@ -2,6 +2,9 @@
 __pycache__/
 *.py[cod]
 
+# Private, self-use notes (e.g. interview talking points) — never committed.
+local_notes/
+
 # Local credentials and candidate data must never be committed.
 mini_agent_python/.env
 mini_agent_python/data/*.json
