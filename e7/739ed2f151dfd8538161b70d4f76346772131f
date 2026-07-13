@@ -1,0 +1,27 @@
+README.md
+  h_32eeb163cbf435 1-53,55-65,68,70,72,74,76,78
+  s_530c13eb65dd40::t_0c8aa639f493dd 54,66-67,69,71,73,75,77,79-101,103-127,130-152,154-158,160,162-163,165,167
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "e7739ed2f151dfd8538161b70d4f76346772131f",
+  "prompts": {},
+  "humans": {
+    "h_32eeb163cbf435": {
+      "author": "Vergessen428 <Vergessen428@users.noreply.github.com>"
+    }
+  },
+  "sessions": {
+    "s_530c13eb65dd40": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5117-aef6-7ed3-9420-0cf41c972c31",
+        "model": "unknown"
+      },
+      "human_author": "Vergessen428 <Vergessen428@users.noreply.github.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
