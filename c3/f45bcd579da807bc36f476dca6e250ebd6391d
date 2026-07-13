@@ -1,0 +1,21 @@
+.gitignore
+  s_bff3e35a29322a::t_2d2015ddb2168f 4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "c3f45bcd579da807bc36f476dca6e250ebd6391d",
+  "prompts": {},
+  "sessions": {
+    "s_bff3e35a29322a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f461a-3b16-7ce0-92bb-915890f142fe",
+        "model": "unknown"
+      },
+      "human_author": "Vergessen428 <Vergessen428@users.noreply.github.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
