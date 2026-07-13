@@ -1,0 +1,25 @@
+docs/ROADMAP_LONG_TERM.md
+  s_530c13eb65dd40::t_1a0764ee6b8e13 101
+static_demo/demo_data.js
+  s_530c13eb65dd40::t_22d2bafc4d807a 253-254
+tests/test_static_demo.py
+  s_530c13eb65dd40::t_2749cadb2f9ad9 147
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "4472ef0c8d271cce1f173faedf8a989aa6cc6b1f",
+  "prompts": {},
+  "sessions": {
+    "s_530c13eb65dd40": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5117-aef6-7ed3-9420-0cf41c972c31",
+        "model": "unknown"
+      },
+      "human_author": "Vergessen428 <Vergessen428@users.noreply.github.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
