@@ -19,12 +19,12 @@ if PROJECT_ROOT not in sys.path:
 
 from core.audio_transcription import AudioTranscriptionError, extract_resume_file, transcribe_audio
 from core.growth_memory import build_candidate_memory
-from core.interview_review import extract_job_description, generate_growth_report, generate_interview_review, sample_interview, sample_reviewed_interview
+from core.interview_review import extract_job_description, generate_growth_report, generate_interview_review, generate_note_questions, sample_interview, sample_reviewed_interview
 from core.interview_store import InterviewStore
 from core.model_provider import build_model, load_dotenv
 from core.multipart import parse_multipart
 from core.pm_skills import public_skills
-from core.research_grounding import ResearchGroundingError, assess_public_source, discover_public_sources
+from core.research_grounding import ResearchGroundingError, assess_public_source, discover_public_sources, run_research_agent
 from core.research_store import ResearchStore
 from core.resume_store import ResumeStore
 
@@ -217,6 +217,45 @@ class AssistantHandler(BaseHTTPRequestHandler):
                 self.send_json({"ok": True, "candidates": candidates})
             except ResearchGroundingError as exc:
                 self.send_json({"ok": False, "error": str(exc)}, 502)
+            return
+        if path == "/api/research/agent":
+            company = str(payload.get("company", "")).strip()
+            role = str(payload.get("role", "")).strip()
+            round_name = str(payload.get("round_name", "")).strip()
+            topic = str(payload.get("topic", "")).strip()
+            if not company and not role and not topic:
+                self.send_json({"ok": False, "error": "请至少填写公司、岗位或搜索主题。"}, 400)
+                return
+            try:
+                model = build_model()
+                result = run_research_agent(model, company, role, round_name, topic)
+                self.send_json({
+                    "ok": True,
+                    "collected": result["collected"],
+                    "trace": result["trace"],
+                    "stop_reason": result["stop_reason"],
+                    "found_enough": result["found_enough"],
+                })
+            except ResearchGroundingError as exc:
+                self.send_json({"ok": False, "error": str(exc)}, 502)
+            return
+        if path == "/api/note-questions":
+            jd = str(payload.get("job_description", "")).strip()
+            resume = str(payload.get("resume_context", "")).strip()
+            iid = str(payload.get("interview_id", "")).strip()
+            if iid:
+                record = STORE.get(iid)
+                if record:
+                    jd = jd or str(record.get("job_description", ""))
+                    resume = resume or str(record.get("resume_context", ""))
+            try:
+                model = build_model()
+                result = generate_note_questions(model, jd, resume)
+                self.send_json({"ok": True, "questions": result["questions"]})
+            except RuntimeError as exc:
+                self.send_json({"ok": False, "error": str(exc)}, 503)
+            except Exception:
+                self.send_json({"ok": False, "error": "速记问卷生成失败，请检查 Gemini 网络与配额后重试。"}, 502)
             return
         if path == "/api/growth-report":
             records = STORE.records()

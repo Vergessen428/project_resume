@@ -36,4 +36,8 @@
 ## 方案二：Docker 完整版（付费 PRO，带实时 AI）
 
 如果你订阅了 HF PRO（可创建 Docker Space），就能跑带后端和实时 Gemini 的完整版。
-本仓库已备好 `Dockerfile` 与根 `README.md` 的 `sdk: docker` frontmatter。
+本仓库已备好根目录 `Dockerfile`（`python:3.12-slim`，暴露 7860 端口）。在 HF 建一个
+**Docker** Space，把仓库内容传上去；Space 需要 `sdk: docker` 的 README frontmatter，
+可在 Space 内单独维护一份带该 frontmatter 的 `README.md`（与本仓库根 README 分开），
+避免污染 GitHub 主页展示。记得在 Space 的 Settings → Secrets 里配 `GEMINI_API_KEY`
+与 `APP_ACCESS_TOKEN`。

@@ -7,18 +7,18 @@ const DEMO = (() => {
   const review = {
     summary: "整体表达清楚，但对指标的定义和归因偏弱：能说出看 DAU 和报名人数，却没讲清为什么选这两个指标、如何归因。项目主导力有亮点（主动把需求拆成两期），但结果量化模糊。",
     strengths: [
-      { title: "主动做取舍", evidence: "“我最后把需求拆成了两期，先上线报名提醒。” [01:36]", why_it_worked: "在资源约束下给出了可落地的优先级方案，体现项目主导力。" },
+      { title: "主动做取舍", evidence: "我把需求拆成两期，先上线报名提醒。", why_it_worked: "在资源约束下给出了可落地的优先级方案，体现项目主导力。" },
     ],
     gaps: [
-      { title: "指标定义与归因偏弱", evidence: "“因为用户多了，报名应该也会更多。” [01:10]", improvement: "先定义北极星指标与护栏指标，再讲清 DAU 与报名之间的因果假设和验证方式。" },
-      { title: "结果缺乏量化", evidence: "“第一周报名人数比以前多了一些，但具体数值我记不太清了。” [02:12]", improvement: "复盘时补齐关键数字（提升幅度、样本、周期），用结构化结果收尾。" },
+      { title: "指标定义与归因偏弱", evidence: "大意是用户多了报名就会多。", improvement: "先定义北极星指标与护栏指标，再讲清 DAU 与报名之间的因果假设和验证方式。" },
+      { title: "结果缺乏量化", evidence: "但具体数值记不清了。", improvement: "复盘时补齐关键数字（提升幅度、样本、周期），用结构化结果收尾。" },
     ],
     questions: [
-      { question: "你怎么判断它是否成功？", answer_summary: "看 DAU 和报名人数。", evidence: "“我会看 DAU 和报名人数，后来 DAU 提升了。” [00:38]", assessment: "指标选择方向对，但没有定义口径，也没说明与目标的关系。", score: 2, next_practice: "用『北极星+护栏』框架重述一遍这个项目的成功标准。" },
+      { question: "你怎么判断它是否成功？", answer_summary: "看 DAU 和报名人数。", evidence: "我说主要看 DAU 和报名人数，后来 DAU 涨了。", assessment: "指标选择方向对，但没有定义口径，也没说明与目标的关系。", score: 2, next_practice: "用『北极星+护栏』框架重述一遍这个项目的成功标准。" },
     ],
     skill_diagnosis: [
-      { skill_id: "metrics_experiment", skill_name: "指标与实验", score: 2, evidence: "“因为用户多了，报名应该也会更多。” [01:10]", diagnosis: "把相关当因果，缺少归因意识。", next_practice: "练习拆解一个指标到可验证的因果链。" },
-      { skill_id: "story_ownership", skill_name: "项目主导力", score: 4, evidence: "“我最后把需求拆成了两期。” [01:36]", diagnosis: "有清晰的个人决策和取舍。", next_practice: "补上决策带来的量化结果。" },
+      { skill_id: "metrics_experiment", skill_name: "指标与实验", score: 2, evidence: "大意是用户多了报名就会多。", diagnosis: "把相关当因果，缺少归因意识。", next_practice: "练习拆解一个指标到可验证的因果链。" },
+      { skill_id: "story_ownership", skill_name: "项目主导力", score: 4, evidence: "我把需求拆成两期，先上线报名提醒。", diagnosis: "有清晰的个人决策和取舍。", next_practice: "补上决策带来的量化结果。" },
     ],
     action_plan: [
       { id: "act1", action: "用北极星+护栏指标重写这个项目的成功定义", priority: "高", reason: "指标是本场最大失分点。", done: false },
@@ -38,7 +38,7 @@ const DEMO = (() => {
     resume_context: "",
     resume_id: "",
     resume_name: "",
-    transcript: "[00:02] 面试官：请介绍一个你主导的项目。\n[00:10] 我：我做过一个校园活动小程序，主要目标是提升同学报名率。\n[00:32] 面试官：你怎么判断它是否成功？\n[00:38] 我：我会看 DAU 和报名人数，后来 DAU 提升了。\n[01:02] 面试官：为什么是这两个指标？\n[01:10] 我：因为用户多了，报名应该也会更多。\n[01:28] 面试官：项目中你遇到的最大分歧是什么？\n[01:36] 我：运营希望多做活动入口，开发觉得时间不够。我最后把需求拆成了两期，先上线报名提醒。\n[02:05] 面试官：这个取舍有什么结果？\n[02:12] 我：第一周报名人数比以前多了一些，但具体数值我记不太清了。",
+    transcript: "面试官让我先介绍一个自己主导的项目，我讲了校园活动小程序，目标是提升同学报名率。\n他问我怎么判断项目是否成功，我说主要看 DAU 和报名人数，后来 DAU 涨了。\n接着追问为什么是这两个指标，这里我答得比较虚，大意是用户多了报名就会多。\n又问项目里最大的分歧，我说运营想多做活动入口、开发觉得时间不够，我把需求拆成两期，先上线报名提醒。\n最后问这个取舍带来什么结果，我说第一周报名比以前多了一些，但具体数值记不清了。",
     personal_notes: "面试时被追问指标定义，回答得比较虚。",
     jd_analysis: null,
     review,
@@ -93,7 +93,29 @@ const DEMO = (() => {
     { id: "business_context", name: "业务与岗位理解", focus: "将个人经历连接到 JD、公司业务和具体岗位场景。" },
   ];
 
-  return { interview, interviewSummary, resume, resumeSummary, research, memory, skills };
+  const noteQuestions = [
+    { id: "hit_1", type: "命中", question: "面试官追问校园活动小程序的指标时，你是怎么定义“成功”的？口径讲清了吗？", why_asked: "简历核心项目 × JD 指标设计要求" },
+    { id: "hit_2", type: "命中", question: "被问到需求取舍（活动入口 vs 报名提醒）时，你的决策依据是什么？", why_asked: "命中 JD 的问题拆解与推进能力" },
+    { id: "gap_1", type: "补刀", question: "JD 强调数据验证方案，你有没有被问到 A/B 实验或归因？答得如何？", why_asked: "JD 要求但简历未体现的实验能力" },
+    { id: "gap_2", type: "补刀", question: "跨团队推进闭环这块，面试官有没有追问你如何对齐目标、收敛分歧？", why_asked: "JD 要求跨团队推进，简历偏弱" },
+    { id: "common_1", type: "通用", question: "这场面试里，哪个问题你答得最卡？当时你是怎么回应的？", why_asked: "定位当场最大失分点" },
+    { id: "common_2", type: "通用", question: "面完你最后悔哪句话没说出来，或哪个点没讲清？", why_asked: "捕捉遗漏，供下场改进" },
+  ];
+
+  const agentResult = {
+    collected: [
+      { url: "https://www.nowcoder.com/discuss/xxx", title: "字节 AI 产品经理实习 一面面经", platform: "牛客", summary: "提到指标定义、A/B 实验与归因追问，整体考察数据敏感度和结构化表达。", published_date: "2026-09-05", screening: { recommendation: "needs_review", relevance: 72, reason: "相关度高但需读原文确认" } },
+    ],
+    trace: [
+      { round: 1, reasoning: "先用公司+岗位+一面直搜", action: "search", query: "字节 产品经理 一面 面经", added: 0 },
+      { round: 2, reasoning: "首轮无达标，换岗位同义词+平台", action: "search", query: "字节跳动 AI产品 实习 一面 牛客", added: 1 },
+      { round: 3, reasoning: "已收集到 1 条待确认，预算内主动停", action: "stop", stop_reason: "达成部分目标，交人工摘录", added: 0 },
+    ],
+    stop_reason: "达成部分目标，交人工摘录",
+    found_enough: false,
+  };
+
+  return { interview, interviewSummary, resume, resumeSummary, research, memory, skills, noteQuestions, agentResult };
 })();
 
 const DEMO_WRITE_MESSAGE = "这是静态演示版：可以浏览完整示例，但保存、AI 复盘、上传和联网搜索需要在完整版（本地或带后端的部署）中体验。";
@@ -103,6 +125,10 @@ window.fetch = async (url, options = {}) => {
   const method = (options.method || 'GET').toUpperCase();
   const path = String(url).split('?')[0];
   const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+
+  // These POST endpoints serve canned data so the demo can showcase the feature.
+  if (path === '/api/note-questions') return json({ ok: true, questions: DEMO.noteQuestions });
+  if (path === '/api/research/agent') return json({ ok: true, collected: DEMO.agentResult.collected, trace: DEMO.agentResult.trace, stop_reason: DEMO.agentResult.stop_reason, found_enough: DEMO.agentResult.found_enough });
 
   if (method !== 'GET') {
     return json({ ok: false, error: DEMO_WRITE_MESSAGE }, 403);
@@ -124,7 +150,7 @@ const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 const interviewForm = $('#interview-form');
 const interviewFields = ['company', 'role', 'round_name', 'date', 'status', 'job_description', 'resume_context', 'transcript', 'personal_notes'];
-const app = { selectedId: null, current: null, interviews: [], resumes: [], research: [], resumeId: '', jdAnalysis: null, selectedAudio: null, selectedResumeFile: null, editingResumeId: null, editingResearchId: null };
+const app = { selectedId: null, current: null, interviews: [], resumes: [], research: [], resumeId: '', jdAnalysis: null, selectedAudio: null, selectedResumeFile: null, editingResumeId: null, editingResearchId: null, noteQuestions: [] };
 const ACCESS_TOKEN_KEY = 'autumn-assistant-access-token';
 
 async function api(url, options = {}) {
@@ -147,7 +173,7 @@ async function refreshInterviews() { app.interviews = (await api('/api/interview
 async function refreshResumes() { app.resumes = (await api('/api/resumes')).resumes; const select = $('#resume-select'); const old = app.resumeId; select.replaceChildren(new Option('暂不关联简历', '')); app.resumes.forEach(item => select.add(new Option(`${item.name}${item.target_role ? ' · ' + item.target_role : ''}`, item.id))); select.value = old; renderResumeList(); }
 async function refreshResearch() { const data = await api('/api/research'); app.research = data.research; $('#research-total').textContent = data.stats.total; $('#research-usable').textContent = data.stats.usable; $('#research-review').textContent = data.stats.needs_review; renderResearchList(); renderMetrics(); }
 
-function resetInterview() { app.selectedId = null; app.current = null; app.resumeId = ''; app.jdAnalysis = null; app.selectedAudio = null; interviewFields.forEach(name => field(name).value = name === 'status' ? '待复盘' : ''); $('#resume-select').value = ''; $('#resume-preview').textContent = '选择一份简历；保存面试时会记录当时的内容快照。'; $('#jd-analysis').hidden = true; $('#audio-state').textContent = '尚未选择录音'; $('#consent-check').checked = false; $('#page-title').textContent = '新建一场面试复盘'; setSaveState('未保存'); setReviewState('等待资料'); renderReview(null); renderInterviewList(); setView('review-view'); }
+function resetInterview() { app.selectedId = null; app.current = null; app.resumeId = ''; app.jdAnalysis = null; app.selectedAudio = null; app.noteQuestions = []; renderNoteQuestions([]); interviewFields.forEach(name => field(name).value = name === 'status' ? '待复盘' : ''); $('#resume-select').value = ''; $('#resume-preview').textContent = '选择一份简历；保存面试时会记录当时的内容快照。'; $('#jd-analysis').hidden = true; $('#audio-state').textContent = '尚未选择录音'; $('#consent-check').checked = false; $('#page-title').textContent = '新建一场面试复盘'; setSaveState('未保存'); setReviewState('等待资料'); renderReview(null); renderInterviewList(); setView('review-view'); }
 function setSaveState(text, kind = '') { $('#save-state').textContent = text; $('#save-state').className = `save-state ${kind}`; }
 function setReviewState(text, kind = '') { $('#review-state').textContent = text; $('#review-state').className = `review-state ${kind}`; }
 function fillInterview(record) { interviewFields.forEach(name => field(name).value = record?.[name] || ''); app.resumeId = record?.resume_id || ''; $('#resume-select').value = app.resumeId; app.jdAnalysis = record?.jd_analysis || null; renderJd(); $('#resume-preview').textContent = record?.resume_name ? `已关联：${record.resume_name}。此场面试已保存当时的简历快照。` : '暂未关联简历。'; }
@@ -160,6 +186,11 @@ function renderReview(review) { const root = $('#review-content'); root.replaceC
 function renderJd() { const root = $('#jd-analysis'); root.replaceChildren(); if (!app.jdAnalysis) { root.hidden = true; return; } root.hidden = false; const title = document.createElement('strong'); title.textContent = app.jdAnalysis.role_title || '岗位画像'; root.append(title); [['职责', 'responsibilities'], ['要求', 'requirements'], ['关键词', 'keywords'], ['可能追问', 'interview_focus']].forEach(([label, key]) => { if (!app.jdAnalysis[key]?.length) return; const group = document.createElement('div'); group.innerHTML = '<span></span><ul></ul>'; group.querySelector('span').textContent = label; app.jdAnalysis[key].forEach(item => { const li = document.createElement('li'); li.textContent = item; group.querySelector('ul').append(li); }); root.append(group); }); }
 function demoWrite() { toast(DEMO_WRITE_MESSAGE); }
 
+const NOTE_TYPE_CLASS = { '命中': 'hit', '补刀': 'gap', '通用': 'common' };
+async function generateNoteQuestions() { const button = $('#note-questions'); busy(button, true, '正在出题...'); try { const data = await api('/api/note-questions', { method: 'POST', body: JSON.stringify({ job_description: field('job_description').value, resume_context: field('resume_context').value }) }); app.noteQuestions = data.questions || []; renderNoteQuestions(app.noteQuestions); } catch (error) { toast(error.message); } finally { busy(button, false, ''); } }
+function renderNoteQuestions(questions) { const panel = $('#note-questions-panel'); panel.replaceChildren(); panel.hidden = !questions.length; if (!questions.length) return; questions.forEach(q => { const card = document.createElement('article'); card.className = 'note-question'; card.dataset.id = q.id; card.innerHTML = '<div class="note-question-head"><span class="note-badge"></span><strong></strong></div><p class="note-why"></p><textarea rows="2" placeholder="趁记忆新鲜，简短记下..."></textarea>'; const badge = card.querySelector('.note-badge'); badge.textContent = q.type || '问题'; badge.classList.add(NOTE_TYPE_CLASS[q.type] || 'common'); card.querySelector('strong').textContent = q.question; card.querySelector('.note-why').textContent = q.why_asked ? `为什么问：${q.why_asked}` : ''; panel.append(card); }); const actions = document.createElement('div'); actions.className = 'note-questions-actions'; const merge = document.createElement('button'); merge.type = 'button'; merge.className = 'secondary-button compact-button'; merge.textContent = '把问答整理进转写'; merge.onclick = collectNoteAnswersIntoTranscript; actions.append(merge); panel.append(actions); }
+function collectNoteAnswersIntoTranscript() { const blocks = []; $$('#note-questions-panel .note-question').forEach(card => { const answer = card.querySelector('textarea').value.trim(); if (!answer) return; const question = card.querySelector('strong').textContent; blocks.push(`Q: ${question}\nA: ${answer}`); }); if (!blocks.length) { toast('先填写至少一个回答，再并入转写。'); return; } const transcript = field('transcript'); const addition = `【面后速记】\n${blocks.join('\n\n')}`; transcript.value = transcript.value.trim() ? `${transcript.value.trim()}\n\n${addition}` : addition; setSaveState('有未保存修改'); toast('已并入转写，可继续补充或生成复盘。'); }
+
 function renderResumeList() { const list = $('#resume-list'); list.replaceChildren(); if (!app.resumes.length) { list.innerHTML = '<p class="empty-copy">还没有简历版本。</p>'; return; } app.resumes.forEach(item => { const button = document.createElement('button'); button.type = 'button'; button.className = `interview-item ${item.id === app.editingResumeId ? 'active' : ''}`; button.innerHTML = '<strong></strong><span></span>'; button.querySelector('strong').textContent = item.name; button.querySelector('span').textContent = item.target_role || '未填写目标岗位'; button.onclick = () => loadResume(item.id); list.append(button); }); }
 function resetResume() { app.editingResumeId = null; app.selectedResumeFile = null; ['resume-name', 'resume-target', 'resume-content'].forEach(id => $(`#${id}`).value = ''); $('#resume-file').value = ''; $('#resume-file-consent').checked = false; $('#resume-file-state').textContent = '尚未选择文件'; renderResumeList(); }
 async function loadResume(id) { try { const resume = (await api(`/api/resumes/${id}`)).resume; app.editingResumeId = id; $('#resume-name').value = resume.name; $('#resume-target').value = resume.target_role; $('#resume-content').value = resume.content; renderResumeList(); setView('resume-view'); } catch (error) { toast(error.message); } }
@@ -171,6 +202,9 @@ function fillResearch(record) { app.editingResearchId = record.id; $('#research-
 function statusLabel(status) { return ({ candidate: '待预审', auto_approved: 'AI 可用', needs_review: '待确认', approved: '已确认', dismissed: '不使用' })[status] || '未知'; }
 function renderResearchList() { const list = $('#research-list'); list.replaceChildren(); if (!app.research.length) { list.innerHTML = '<p class="empty-copy">还没有公开资料。先搜索候选，再摘录原帖正文进行 AI 预审。</p>'; return; } app.research.forEach(record => { const card = document.createElement('article'); card.className = 'research-item'; const assessment = record.assessment || {}; card.innerHTML = '<div class="research-top"><div><a target="_blank" rel="noreferrer"></a><p></p></div><div class="badge-row"><span class="status-badge"></span><span class="confidence"></span></div></div><p class="research-summary"></p><div class="research-meta"></div><div class="research-actions"></div>'; const link = card.querySelector('a'); link.href = record.url; link.textContent = record.title; card.querySelector('.research-top p').textContent = [record.platform, record.company, record.role, record.round_name, record.published_date].filter(Boolean).join(' · '); const badge = card.querySelector('.status-badge'); badge.textContent = statusLabel(record.status); badge.classList.add(record.status); card.querySelector('.confidence').textContent = record.assessment ? `AI 置信度 ${record.confidence}%` : '尚未预审'; card.querySelector('.research-summary').textContent = assessment.summary || (record.source_text || '').slice(0, 240) || '未填写摘要'; card.querySelector('.research-meta').textContent = assessment.concerns?.length ? `限制：${assessment.concerns.join('；')}` : '资料仅作为公开经验参考，复盘中会保留原链接与日期。'; const actions = card.querySelector('.research-actions'); const edit = document.createElement('button'); edit.className = 'secondary-button compact-button'; edit.textContent = '查看/编辑'; edit.onclick = () => { fillResearch(record); setView('research-view'); window.scrollTo({ top: 0, behavior: 'smooth' }); }; actions.append(edit); list.append(card); }); }
 function renderDiscovery(candidates) { const root = $('#discovery-results'); root.replaceChildren(); if (!candidates.length) { root.innerHTML = '<p class="empty-copy">没有发现适合的候选资料。换一个更具体的公司、岗位或主题再试。</p>'; return; } }
+async function runResearchAgent() { const button = $('#agent-button'); busy(button, true, 'Agent 正在自主调研...'); try { const data = await api('/api/research/agent', { method: 'POST', body: JSON.stringify({ company: $('#discover-company').value, role: $('#discover-role').value, round_name: $('#discover-round').value, topic: $('#discover-topic').value }) }); renderAgentTrace(data.trace, data.stop_reason, data.found_enough); renderAgentCollected(data.collected || []); } catch (error) { toast(error.message); } finally { busy(button, false, ''); } }
+function renderAgentTrace(trace, stopReason, foundEnough) { const root = $('#agent-trace'); root.replaceChildren(); root.hidden = !(trace && trace.length); if (!trace || !trace.length) return; trace.forEach(step => { const card = document.createElement('div'); card.className = 'agent-round'; card.innerHTML = '<strong></strong><p></p><p class="agent-query"></p>'; card.querySelector('strong').textContent = `第 ${step.round} 轮 · ${step.action === 'stop' ? '停止' : '搜索'}${step.action === 'search' ? ` · 新增 ${step.added || 0}` : ''}`; card.querySelector('p').textContent = step.reasoning || ''; const q = card.querySelector('.agent-query'); if (step.query) q.textContent = `查询词：${step.query}`; else q.remove(); root.append(card); }); const stop = document.createElement('p'); stop.className = 'agent-stop'; stop.textContent = `${foundEnough ? '已找够待确认资料' : '未达目标数量'} · ${stopReason || '结束'}`; root.append(stop); }
+function renderAgentCollected(candidates) { const root = $('#discovery-results'); root.replaceChildren(); if (!candidates.length) { root.innerHTML = '<p class="empty-copy">Agent 未收集到待确认候选。</p>'; return; } candidates.forEach(candidate => { const card = document.createElement('article'); card.className = 'discovery-item'; card.innerHTML = '<a target="_blank" rel="noreferrer"></a><p></p><div><span></span><button class="secondary-button compact-button" type="button">带入资料库</button></div>'; card.querySelector('a').href = candidate.url; card.querySelector('a').textContent = candidate.title; const screening = candidate.screening || {}; card.querySelector('p').textContent = `${candidate.summary || '候选公开资料'}${screening.reason ? ` · 初筛：${screening.reason}` : ''}`; card.querySelector('span').textContent = [candidate.platform, candidate.published_date, screening.relevance != null ? `相关度 ${screening.relevance}` : ''].filter(Boolean).join(' · ') || '公开搜索结果'; card.querySelector('button').onclick = demoWrite; root.append(card); }); }
 
 function renderMemory(memory) { const root = $('#memory-summary'); root.replaceChildren(); const items = [{ label: '已复盘面试', value: memory.reviewed_interviews || 0 }, { label: '待完成行动', value: memory.open_actions?.length || 0 }, { label: '重复薄弱点', value: memory.recurring_gaps?.length || 0 }]; items.forEach(item => { const block = document.createElement('div'); block.innerHTML = '<span></span><strong></strong>'; block.querySelector('span').textContent = item.label; block.querySelector('strong').textContent = item.value; root.append(block); }); const patterns = document.createElement('div'); patterns.className = 'memory-patterns'; patterns.innerHTML = '<p>当前重复出现</p>'; (memory.recurring_gaps || []).slice(0, 4).forEach(item => { const tag = document.createElement('span'); tag.textContent = `${item.title} · ${item.occurrences}次`; patterns.append(tag); }); if (!(memory.recurring_gaps || []).length) patterns.append('暂无足够数据'); root.append(patterns); }
 function renderSkillList(skills) { const root = $('#skill-list'); root.replaceChildren(); skills.forEach(skill => { const item = document.createElement('div'); item.className = 'skill-definition'; item.innerHTML = '<strong></strong><span></span>'; item.querySelector('strong').textContent = skill.name; item.querySelector('span').textContent = skill.focus; root.append(item); }); }
@@ -180,11 +214,11 @@ async function refreshGrowthMemory() { try { const data = await api('/api/growth
 interviewForm.onsubmit = event => { event.preventDefault(); demoWrite(); };
 $('#new-interview').onclick = resetInterview;
 $('#load-demo').onclick = () => loadInterview(DEMO.interview.id);
-$('#review-button').onclick = demoWrite; $('#extract-jd').onclick = demoWrite; $('#transcribe-audio').onclick = demoWrite; $('#resume-select').onchange = selectResume;
+$('#review-button').onclick = demoWrite; $('#extract-jd').onclick = demoWrite; $('#transcribe-audio').onclick = demoWrite; $('#resume-select').onchange = selectResume; $('#note-questions').onclick = generateNoteQuestions;
 $('#audio-file').onchange = event => { app.selectedAudio = event.target.files?.[0] || null; $('#audio-state').textContent = app.selectedAudio ? `${app.selectedAudio.name} · ${(app.selectedAudio.size / 1024 / 1024).toFixed(1)} MB` : '尚未选择录音'; };
 $('#transcript-file').onchange = async event => { const file = event.target.files?.[0]; if (!file) return; field('transcript').value = await file.text(); };
 $('#new-resume').onclick = resetResume; $('#resume-form').onsubmit = event => { event.preventDefault(); demoWrite(); }; $('#resume-file').onchange = event => { app.selectedResumeFile = event.target.files?.[0] || null; $('#resume-file-state').textContent = app.selectedResumeFile ? `${app.selectedResumeFile.name} · ${(app.selectedResumeFile.size / 1024 / 1024).toFixed(1)} MB` : '尚未选择文件'; }; $('#parse-resume-file').onclick = demoWrite;
-$('#research-new').onclick = resetResearch; $('#research-form').onsubmit = event => { event.preventDefault(); demoWrite(); }; $('#discover-form').onsubmit = event => { event.preventDefault(); demoWrite(); }; $('#generate-growth').onclick = demoWrite;
+$('#research-new').onclick = resetResearch; $('#research-form').onsubmit = event => { event.preventDefault(); demoWrite(); }; $('#discover-form').onsubmit = event => { event.preventDefault(); demoWrite(); }; $('#agent-button').onclick = runResearchAgent; $('#generate-growth').onclick = demoWrite;
 $$('[data-view]').forEach(button => button.onclick = () => setView(button.dataset.view));
 $$('button').forEach(button => button.dataset.label = button.textContent);
 async function initializeApp() { resetInterview(); await Promise.all([refreshResumes(), refreshInterviews(), refreshResearch(), refreshGrowthMemory(), api('/api/skills').then(data => renderSkillList(data.skills))]); try { const data = await api('/api/health'); const demoTag = data.demo_mode && !data.can_write ? ' · 只读演示' : ''; $('#model-status').textContent = `${data.active_provider || 'gemini'} · ${data.model}${demoTag}`; $('.status-dot').className = 'status-dot ready'; } catch { $('#model-status').textContent = '静态演示'; $('.status-dot').className = 'status-dot ready'; } }
