@@ -8,6 +8,7 @@ import os
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "app"))
 
@@ -16,7 +17,7 @@ from core.interview_review import _normalise_review, _parse_json, sample_reviewe
 from core.growth_memory import build_candidate_memory
 from core.interview_store import InterviewStore
 from core.research_store import ResearchStore
-from core.research_grounding import build_search_query, derive_research_topic, normalise_platform, run_research_agent, screen_candidate
+from core.research_grounding import build_search_query, build_search_queries, derive_research_topic, fetch_public_source, normalise_platform, run_research_agent, screen_candidate
 from web_app import validate_interview, validate_research_candidate
 
 
@@ -333,12 +334,75 @@ class NoteQuestionsTests(unittest.TestCase):
         self.assertIn("不是事实证据", model.prompt)
 
     def test_jd_topics_become_bounded_search_intent(self):
-        topic = derive_research_topic("", {"search_topics": ["指标设计", "项目深挖"], "keywords": ["实验"]})
+        topic = derive_research_topic("", {"search_topics": ["指标设计", "项目深挖"], "search_synonyms": ["增长实验"], "keywords": ["实验"]})
         self.assertIn("指标设计", topic)
         self.assertIn("项目深挖", topic)
+        self.assertIn("增长实验", topic)
 
 
 class ResearchAgentTests(unittest.TestCase):
+    def test_query_plan_has_bounded_variants(self):
+        queries = build_search_queries("示例公司", "产品经理", "一面", "指标与实验", "xiaohongshu")
+        self.assertEqual(len(queries), 4)
+        self.assertTrue(all("site:xiaohongshu.com/explore" in query for query in queries))
+
+    def test_public_fetch_rejects_non_platform_hosts(self):
+        result = fetch_public_source("http://127.0.0.1:8765/private")
+        self.assertEqual(result["fetch_status"], "unsupported_host")
+
+    def test_public_fetch_extracts_metadata_and_visible_text(self):
+        class Headers(dict):
+            def get_content_charset(self):
+                return "utf-8"
+
+        class Response:
+            headers = Headers({"Content-Type": "text/html; charset=utf-8"})
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+            def read(self, _limit):
+                return ('<html><head><title>公开面经</title><meta name="description" content="具体面试摘要"></head><body><script>ignore()</script><p>%s</p></body></html>' % ("指标定义和项目复盘 " * 12)).encode("utf-8")
+
+            def geturl(self):
+                return "https://www.xiaohongshu.com/explore/canonical"
+
+            def getheader(self, *_args):
+                return None
+
+        with patch("core.research_grounding.urllib.request.urlopen", return_value=Response()):
+            result = fetch_public_source("https://www.xiaohongshu.com/explore/demo")
+        self.assertEqual(result["fetch_status"], "fetched_metadata")
+        self.assertEqual(result["canonical_url"], "https://www.xiaohongshu.com/explore/canonical")
+        self.assertIn("公开面经", result["title"])
+        self.assertIn("指标定义", result["text"])
+        self.assertNotIn("ignore", result["text"])
+
+    def test_agent_attaches_public_fetch_status_before_screening(self):
+        seen = []
+
+        def plan(_context):
+            return {"action": "search", "query": "q", "reasoning": "test"}
+
+        def screen(candidate):
+            seen.append(candidate)
+            return {"recommendation": "needs_review", "relevance": 80}
+
+        result = run_research_agent(
+            None, "公司", "岗位", "一面", target=1, max_rounds=1,
+            plan_fn=plan,
+            search_fn=lambda _query: [{"url": "https://www.xiaohongshu.com/explore/demo", "title": "搜索标题"}],
+            screen_fn=screen,
+            fetch_fn=lambda _url: {"fetch_status": "fetched_metadata", "canonical_url": "https://www.xiaohongshu.com/explore/demo", "title": "原帖标题", "text": "原帖正文 " * 30},
+        )
+        self.assertTrue(result["found_enough"])
+        self.assertEqual(seen[0]["title"], "原帖标题")
+        self.assertEqual(seen[0]["provenance_status"], "auto_fetched_unverified")
+        self.assertEqual(seen[0]["fetch_status"], "fetched_metadata")
+
     def test_platform_query_uses_public_xiaohongshu_scope(self):
         query = build_search_query("示例公司", "产品经理", "一面", "指标", "xiaohongshu")
         self.assertIn("site:xiaohongshu.com/explore", query)

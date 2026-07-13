@@ -24,7 +24,7 @@ from core.interview_store import InterviewStore
 from core.model_provider import build_model, load_dotenv
 from core.multipart import parse_multipart
 from core.pm_skills import public_skills
-from core.research_grounding import ResearchGroundingError, assess_public_source, build_search_query, derive_research_topic, discover_public_sources, normalise_platform, run_research_agent
+from core.research_grounding import ResearchGroundingError, assess_public_source, build_search_query, derive_research_topic, discover_public_sources, enrich_public_candidate, normalise_platform, run_research_agent
 from core.research_store import ResearchStore
 from core.resume_store import ResumeStore
 
@@ -219,12 +219,22 @@ class AssistantHandler(BaseHTTPRequestHandler):
             if existing:
                 self.send_json({"ok": True, "research": existing, "existing": True})
                 return
-            candidate.update({
+            enriched = enrich_public_candidate(candidate)
+            fetched = enriched.get("fetch") if isinstance(enriched.get("fetch"), dict) else {}
+            fetched_text = str(enriched.get("source_text", "")).strip()
+            fetch_status = str(enriched.get("fetch_status", "manual_check_required"))
+            if fetched_text:
+                notes = "Agent 已自动读取公开页面可见文本；这不是人工确认，仍需检查原帖和上下文后再预审。"
+            else:
+                reason = str(fetched.get("fetch_reason", "公开页面未返回足够正文。"))
+                notes = "Agent 已尝试自动打开原帖，但未获得足够正文：%s 仍可手动检查链接。" % reason
+            enriched.update({
                 "status": "candidate",
-                "source_text": "",
-                "notes": "搜索候选已自动识别标题、链接和平台；待打开原帖摘录正文后再预审。",
+                "source_text": fetched_text,
+                "notes": notes,
+                "fetch_status": fetch_status,
             })
-            self.send_json({"ok": True, "research": RESEARCH_STORE.create(candidate), "existing": False}, 201)
+            self.send_json({"ok": True, "research": RESEARCH_STORE.create(enriched), "existing": False}, 201)
             return
         if path == "/api/research/discover":
             company = str(payload.get("company", "")).strip()

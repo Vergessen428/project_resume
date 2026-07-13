@@ -41,6 +41,8 @@ window.AUTUMN_DEMO_DATA = {
       search_query: "site:xiaohongshu.com/explore 字节 产品经理 一面 指标 面经",
       source_kind: "demo_synthetic",
       provenance_status: "manual_check_required",
+      fetch_status: "shell_only",
+      fetch: { fetch_status: "shell_only", fetch_reason: "静态演示不联网；真实后端会尝试读取公开 HTML，遇到脚本壳则保留待确认。" },
       screening: {
         recommendation: "needs_review",
         relevance: 72,
@@ -50,9 +52,10 @@ window.AUTUMN_DEMO_DATA = {
     }],
     trace: [
       { round: 1, reasoning: "先用平台限定词搜索公司、岗位和轮次", action: "search", query: "site:xiaohongshu.com/explore 字节 产品经理 一面 指标 面经", added: 1 },
-      { round: 2, reasoning: "保留待人工确认状态，不把搜索摘要当作证据", action: "stop", stop_reason: "交给人工打开原帖并摘录正文。", added: 0 },
+      { round: 2, reasoning: "已尝试读取公开页面；演示环境不联网，保留待确认状态", action: "fetch", query: "打开候选公开链接并提取可见正文", added: 0, fetched: 0 },
+      { round: 3, reasoning: "不把搜索摘要或页面壳当作证据", action: "stop", stop_reason: "候选仍需来源确认后才能进入可信资料库。", added: 0 },
     ],
-    stop_reason: "交给人工打开原帖并摘录正文。",
+    stop_reason: "候选仍需来源确认后才能进入可信资料库。",
     found_enough: false,
     search_meta: {
       platform: "xiaohongshu",

@@ -6,6 +6,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
+from html.parser import HTMLParser
 from typing import Any, Dict, List, Tuple
 
 
@@ -17,6 +18,12 @@ class ResearchGroundingError(RuntimeError):
 
 
 PLATFORM_LABELS = {"all": "全网", "xiaohongshu": "小红书", "nowcoder": "牛客"}
+PUBLIC_FETCH_HOSTS = {
+    "xiaohongshu.com", "www.xiaohongshu.com", "xhslink.com", "www.xhslink.com",
+    "nowcoder.com", "www.nowcoder.com",
+}
+PUBLIC_FETCH_MAX_BYTES = 256 * 1024
+PUBLIC_FETCH_MAX_TEXT = 16000
 
 
 def normalise_platform(value: Any) -> str:
@@ -34,11 +41,28 @@ def build_search_query(company: str, role: str, round_name: str, topic: str, pla
     return "%s (site:nowcoder.com OR site:xiaohongshu.com)" % terms
 
 
+def build_search_queries(company: str, role: str, round_name: str, topic: str, platform: str = "all") -> List[str]:
+    """Build a small deterministic query plan for the agent fallback path."""
+    platform = normalise_platform(platform)
+    variants = [
+        topic,
+        "%s 项目深挖" % topic,
+        "%s 指标 实验 归因" % topic,
+        "%s 面试问题 复盘" % topic,
+    ]
+    queries: List[str] = []
+    for variant in variants:
+        query = build_search_query(company, role, round_name, variant.strip(), platform)
+        if query not in queries:
+            queries.append(query)
+    return queries
+
+
 def derive_research_topic(topic: str = "", jd_analysis: Dict[str, Any] = None, job_description: str = "") -> str:
     """Turn JD analysis into bounded search intent without treating the JD as a query instruction."""
     analysis = jd_analysis if isinstance(jd_analysis, dict) else {}
     parts = [str(topic or "").strip()]
-    for key in ("search_topics", "interview_focus", "keywords", "requirements"):
+    for key in ("search_topics", "search_synonyms", "interview_focus", "keywords", "requirements"):
         values = analysis.get(key) or []
         if isinstance(values, list):
             parts.extend(str(value).strip() for value in values[:6] if str(value).strip())
@@ -72,19 +96,166 @@ def _retrieved_at() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
+class _PublicPageParser(HTMLParser):
+    """Extract conservative metadata and visible text from a public HTML page."""
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.title = ""
+        self.description = ""
+        self.canonical_url = ""
+        self._in_title = False
+        self._ignored_depth = 0
+        self._text: List[str] = []
+
+    def handle_starttag(self, tag: str, attrs: List[Tuple[str, str]]) -> None:
+        attrs_map = {str(key).lower(): str(value or "") for key, value in attrs}
+        tag = tag.lower()
+        if tag == "title":
+            self._in_title = True
+        if tag in {"script", "style", "noscript", "template", "svg"}:
+            self._ignored_depth += 1
+        if tag == "meta":
+            key = (attrs_map.get("property") or attrs_map.get("name") or "").lower()
+            content = attrs_map.get("content", "").strip()
+            if key in {"og:title", "twitter:title"} and content and not self.title:
+                self.title = content[:300]
+            elif key in {"description", "og:description", "twitter:description"} and content and not self.description:
+                self.description = content[:1000]
+        if tag == "link" and attrs_map.get("rel", "").lower() == "canonical":
+            self.canonical_url = attrs_map.get("href", "").strip()[:2000]
+
+    def handle_endtag(self, tag: str) -> None:
+        tag = tag.lower()
+        if tag == "title":
+            self._in_title = False
+        if tag in {"script", "style", "noscript", "template", "svg"} and self._ignored_depth:
+            self._ignored_depth -= 1
+
+    def handle_data(self, data: str) -> None:
+        text = " ".join(str(data).split())
+        if not text:
+            return
+        if self._in_title and not self.title:
+            self.title = text[:300]
+        if self._ignored_depth == 0:
+            self._text.append(text)
+
+    def result(self) -> Dict[str, str]:
+        visible = re.sub(r"\s+", " ", " ".join(self._text)).strip()
+        if len(visible) < 80 and self.description:
+            visible = self.description
+        return {
+            "title": self.title[:300],
+            "description": self.description[:1000],
+            "canonical_url": self.canonical_url,
+            "text": visible[:PUBLIC_FETCH_MAX_TEXT],
+        }
+
+
+def fetch_public_source(url: str, timeout: float = 8.0) -> Dict[str, Any]:
+    """Attempt a bounded public-page read without login, cookies, or private APIs."""
+    original_url = str(url or "").strip()
+    parsed = urllib.parse.urlparse(original_url)
+    host = (parsed.hostname or "").lower().rstrip(".")
+    result: Dict[str, Any] = {
+        "fetch_status": "not_attempted",
+        "fetch_reason": "",
+        "fetched_at": _retrieved_at(),
+        "requested_url": original_url[:2000],
+        "canonical_url": original_url[:2000],
+        "title": "",
+        "description": "",
+        "text": "",
+    }
+    if parsed.scheme not in {"http", "https"} or host not in PUBLIC_FETCH_HOSTS:
+        result.update({"fetch_status": "unsupported_host", "fetch_reason": "只自动读取已限定的平台公开域名。"})
+        return result
+    request = urllib.request.Request(
+        original_url,
+        headers={
+            "User-Agent": "Autumn-PM-Coach/2.0 public-research",
+            "Accept": "text/html,application/xhtml+xml",
+            "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.5",
+        },
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            body = response.read(PUBLIC_FETCH_MAX_BYTES)
+            result["canonical_url"] = str(response.geturl() or original_url)[:2000]
+            content_type = str(response.headers.get("Content-Type", ""))
+            charset = response.headers.get_content_charset() or "utf-8"
+    except urllib.error.HTTPError as exc:
+        status = "blocked" if exc.code in {401, 403, 429} else "fetch_failed"
+        result.update({"fetch_status": status, "fetch_reason": "公开页面返回 HTTP %s。" % exc.code})
+        return result
+    except (urllib.error.URLError, TimeoutError, OSError) as exc:
+        result.update({"fetch_status": "fetch_failed", "fetch_reason": "公开页面读取失败：%s。" % str(exc)[:160]})
+        return result
+    if "html" not in content_type.lower() and "xhtml" not in content_type.lower():
+        result.update({"fetch_status": "unsupported_content", "fetch_reason": "页面不是可读取的 HTML。"})
+        return result
+    try:
+        parser = _PublicPageParser()
+        parser.feed(body.decode(charset, errors="replace"))
+        parsed_page = parser.result()
+    except Exception as exc:
+        result.update({"fetch_status": "fetch_failed", "fetch_reason": "HTML 解析失败：%s。" % str(exc)[:120]})
+        return result
+    result.update({key: value for key, value in parsed_page.items() if key != "canonical_url" or value})
+    if result["canonical_url"] and not urllib.parse.urlparse(result["canonical_url"]).scheme:
+        result["canonical_url"] = original_url[:2000]
+    if len(result["text"].strip()) >= 80:
+        result["fetch_status"] = "fetched_metadata"
+        result["fetch_reason"] = "已读取公开页面的可见文本，但仍未人工确认原帖真实性。"
+    else:
+        result["fetch_status"] = "shell_only"
+        result["fetch_reason"] = "页面可访问，但只返回登录/脚本壳，未获得足够正文。"
+    return result
+
+
+def enrich_public_candidate(candidate: Dict[str, Any], fetch_fn: Any = None) -> Dict[str, Any]:
+    """Attach fetch provenance while keeping every candidate below the evidence gate."""
+    enriched = dict(candidate)
+    fetch_fn = fetch_fn or fetch_public_source
+    fetched = candidate.get("fetch") if isinstance(candidate.get("fetch"), dict) else None
+    if fetched is None:
+        try:
+            fetched = fetch_fn(str(candidate.get("url", ""))) or {}
+        except Exception as exc:
+            fetched = {"fetch_status": "fetch_failed", "fetch_reason": "自动读取失败：%s" % str(exc)[:160]}
+    if not isinstance(fetched, dict):
+        fetched = {"fetch_status": "fetch_failed", "fetch_reason": "自动读取返回格式不正确。"}
+    enriched["fetch"] = fetched
+    enriched["fetch_status"] = str(fetched.get("fetch_status", "fetch_failed"))[:40]
+    if fetched.get("canonical_url"):
+        enriched["canonical_url"] = str(fetched["canonical_url"])[:2000]
+        enriched["url"] = enriched["canonical_url"]
+    if fetched.get("title"):
+        enriched["title"] = str(fetched["title"])[:300]
+    if fetched.get("description") and not enriched.get("summary"):
+        enriched["summary"] = str(fetched["description"])[:900]
+    if fetched.get("text"):
+        enriched["source_text"] = str(fetched["text"])[:PUBLIC_FETCH_MAX_TEXT]
+        enriched["provenance_status"] = "auto_fetched_unverified"
+    else:
+        enriched["provenance_status"] = "manual_check_required"
+    return enriched
+
+
 def discover_public_sources(model: Any, company: str, role: str, round_name: str, topic: str, platform: str = "all") -> List[Dict[str, Any]]:
     platform = normalise_platform(platform)
     query = build_search_query(company, role, round_name, topic, platform)
     candidates = []
     for candidate in search_candidates(model, query, platform=platform)[:8]:
-        screened = dict(candidate)
+        screened = enrich_public_candidate(candidate)
         screened.update({
             "company": company[:120],
             "role": role[:120],
             "round_name": round_name[:80],
             "topic": topic[:300],
         })
-        screened["screening"] = screen_candidate(model, candidate, company, role, round_name, topic)
+        screened["screening"] = screen_candidate(model, screened, company, role, round_name, topic)
         candidates.append(screened)
     return candidates
 
@@ -110,7 +281,10 @@ comment, interview question, or URL. Return ONLY JSON:
 Include at most 8 candidates. Every URL must be a URL obtained from Google Search. This is discovery only:
 the result is not verified evidence and must not make hiring or interview claims as fact.""" % (query, PLATFORM_LABELS[platform])
     text, sources = _generate(model, prompt, use_search=True)
-    raw = _json_object(text)
+    try:
+        raw = _json_object(text)
+    except (TypeError, ValueError, json.JSONDecodeError):
+        raw = {}
     suggestions = raw.get("candidates", []) if isinstance(raw, dict) else []
     source_map = {item["url"]: item for item in sources}
     candidates: List[Dict[str, Any]] = []
@@ -368,15 +542,29 @@ def _default_plan(model: Any, context: Dict[str, Any]) -> Dict[str, Any]:
     try:
         text, _ = _generate(model, prompt, use_search=False)
     except ResearchGroundingError:
+        variants = context.get("query_variants") or []
+        index = int(context.get("next_query_index", 0) or 0)
+        if index < len(variants):
+            return {"action": "search", "reasoning": "规划模型不可用，使用确定性查询兜底。", "query": variants[index]}
         return {"action": "stop", "reasoning": "规划调用失败。", "query": "", "stop_reason": "规划不可用，停止。"}
-    raw = _json_object(text)
+    try:
+        raw = _json_object(text)
+    except (TypeError, ValueError, json.JSONDecodeError):
+        raw = {}
+    if isinstance(raw, dict) and str(raw.get("query", "")).strip():
+        return raw
+    variants = context.get("query_variants") or []
+    index = int(context.get("next_query_index", 0) or 0)
+    if index < len(variants):
+        return {"action": "search", "reasoning": "模型未给出有效查询，使用确定性查询兜底。", "query": variants[index]}
     return raw if isinstance(raw, dict) else {}
 
 
 def run_research_agent(model: Any, company: str, role: str, round_name: str, topic: str = "", *,
                        platform: str = "all",
                        target: int = 3, max_rounds: int = 3, max_searches: int = 6,
-                       plan_fn: Any = None, search_fn: Any = None, screen_fn: Any = None) -> Dict[str, Any]:
+                       plan_fn: Any = None, search_fn: Any = None, screen_fn: Any = None,
+                       fetch_fn: Any = None) -> Dict[str, Any]:
     """Bounded autonomous research loop.
 
     The model may vary the *search path* (which query to try next) but has no say
@@ -388,6 +576,8 @@ def run_research_agent(model: Any, company: str, role: str, round_name: str, top
     plan_fn = plan_fn or (lambda context: _default_plan(model, context))
     search_fn = search_fn or (lambda query: search_candidates(model, query, platform=platform))
     screen_fn = screen_fn or (lambda candidate: screen_candidate(model, candidate, company, role, round_name, topic))
+    fetch_fn = fetch_fn or fetch_public_source
+    query_variants = build_search_queries(company, role, round_name, topic, platform)
 
     collected: List[Dict[str, Any]] = []
     trace: List[Dict[str, Any]] = []
@@ -416,6 +606,8 @@ def run_research_agent(model: Any, company: str, role: str, round_name: str, top
             "remaining_rounds": max_rounds - rounds,
             "remaining_searches": max_searches - search_calls,
             "history": "\n".join("- %s" % q for q in history),
+            "query_variants": query_variants,
+            "next_query_index": len(history),
         }
         plan = plan_fn(context)
         action = str(plan.get("action", "")).strip()
@@ -430,7 +622,8 @@ def run_research_agent(model: Any, company: str, role: str, round_name: str, top
             trace.append(round_entry)
             break
 
-        query = query if platform == "all" else "%s %s" % (build_search_query(company, role, round_name, topic, platform), query)
+        if platform != "all" and "site:" not in query:
+            query = "%s %s" % (build_search_query(company, role, round_name, topic, platform), query)
         history.append(query)
         try:
             found = search_fn(query)
@@ -442,15 +635,19 @@ def run_research_agent(model: Any, company: str, role: str, round_name: str, top
         search_calls += 1
 
         added = 0
+        fetched_count = 0
         for candidate in found or []:
             url = str(candidate.get("url", "")).strip()
             if not url or url in seen_urls:
                 continue
             seen_urls.add(url)
-            screening = screen_fn(candidate)
+            enriched = enrich_public_candidate(candidate, fetch_fn=fetch_fn)
+            if enriched.get("fetch_status") == "fetched_metadata":
+                fetched_count += 1
+            screening = screen_fn(enriched)
             if screening.get("recommendation") != "needs_review":
                 continue
-            kept = dict(candidate)
+            kept = dict(enriched)
             kept.update({"company": company[:120], "role": role[:120], "round_name": round_name[:80], "topic": topic[:300]})
             kept["screening"] = screening
             collected.append(kept)
@@ -458,6 +655,7 @@ def run_research_agent(model: Any, company: str, role: str, round_name: str, top
             if len(collected) >= target:
                 break
         round_entry["added"] = added
+        round_entry["fetched"] = fetched_count
         trace.append(round_entry)
 
     return {

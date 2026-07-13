@@ -42,7 +42,7 @@
             <label class="consent-row"><input id="consent-check" type="checkbox" /><span>我确认有权使用这份面试材料进行本地保存、音频转写和 AI 复盘。</span></label>
             <div class="form-actions"><button class="secondary-button" type="submit" id="save-button">保存档案</button><button class="primary-button" type="button" id="review-button">生成 PM 复盘</button></div>
           </form>
-          <section class="panel review-panel"><div class="panel-heading"><div><p class="eyebrow">EVIDENCE-BASED REVIEW</p><h3>复盘与行动</h3></div><span class="review-state" id="review-state">等待资料</span></div><div class="review-empty" id="review-empty"><div class="empty-mark">+</div><p>保存面试资料后，生成一份带原文证据、PM 能力诊断和行动项的复盘。</p></div><div id="review-content" hidden></div></section>
+          <section class="panel review-panel"><div class="panel-heading"><div><p class="eyebrow">EVIDENCE-BASED REVIEW</p><h3>复盘与行动</h3></div><span class="review-state" id="review-state">等待资料</span></div><div class="review-empty" id="review-empty"><div class="empty-mark">+</div><p>保存面试资料后，生成一份带原文证据、PM 能力诊断和行动项的复盘。</p></div><div class="memory-callout static-short-memory"><strong>本场短期记忆</strong><p>当前演示会把本场证据、优先缺口和下一步训练保留下来；跨场重复模式请查看长期记忆。</p><span>训练分只表示训练优先级，不代表录用判断</span></div><div id="review-content" hidden></div></section>
         </section>
       </section>
 
@@ -56,9 +56,9 @@
       </section>
 
       <section class="view" id="growth-view">
-        <section class="view-header"><div><p class="eyebrow">LONG-TERM MEMORY</p><h3>阶段成长报告</h3><p>只基于已生成复盘的面试记录。单场证据与跨场趋势分开呈现，避免把猜测当结论。</p></div><button class="primary-button" id="generate-growth" type="button">生成阶段报告</button></section>
+        <section class="view-header"><div><p class="eyebrow">LONG-TERM MEMORY</p><h3>阶段成长报告</h3><p>只基于已生成复盘的面试记录。单场证据与跨场趋势分开呈现，避免把猜测当结论。</p></div><button class="primary-button" id="generate-growth" type="button">查看演示报告</button></section>
         <section class="memory-grid"><div class="panel"><p class="eyebrow">MEMORY SNAPSHOT</p><div id="memory-summary" class="memory-summary"></div></div><div class="panel"><p class="eyebrow">PM COACHING SKILLS</p><div id="skill-list" class="skill-list"></div></div></section>
-        <section class="panel growth-report"><div class="panel-heading"><div><p class="eyebrow">CROSS-STAGE REVIEW</p><h3>报告</h3></div><span class="review-state" id="growth-state">等待数据</span></div><div id="growth-empty" class="review-empty compact"><div class="empty-mark">+</div><p>完成至少一场面试复盘后，在这里生成跨阶段分析。</p></div><div id="growth-content" hidden></div></section>
+        <section class="panel growth-report"><div class="panel-heading"><div><p class="eyebrow">CROSS-STAGE REVIEW</p><h3>报告</h3></div><span class="review-state" id="growth-state">等待数据</span></div><div id="growth-empty" class="review-empty compact" hidden><div class="empty-mark">+</div><p>完成至少一场面试复盘后，在这里生成跨阶段分析。</p></div><div id="growth-content" hidden></div></section>
       </section>
 
       <section class="view" id="resume-view">

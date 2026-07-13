@@ -41,3 +41,7 @@
 .jd-research-handoff strong,.jd-research-handoff span { display:block; }
 .jd-research-handoff strong { color:var(--teal-dark); font-size:12px; }
 .jd-research-handoff span { margin-top:2px; color:var(--muted); font-size:11px; }
+.memory-callout { display:grid; gap:5px; padding:12px; border-left:3px solid var(--teal); background:var(--teal-soft); color:#275853; }
+.memory-callout strong { font-size:12px; }
+.memory-callout p,.memory-callout span { margin:0; font-size:11px; line-height:1.55; }
+.memory-callout span { color:var(--muted); }

@@ -117,6 +117,7 @@ class ResearchStore:
         fields = {
             "title": 300,
             "url": 2000,
+            "canonical_url": 2000,
             "platform": 60,
             "company": 120,
             "role": 120,
@@ -128,6 +129,9 @@ class ResearchStore:
             "source_kind": 60,
             "provenance_status": 60,
             "retrieved_at": 40,
+            "fetched_at": 40,
+            "fetch_status": 40,
+            "fetch_reason": 300,
             "source_text": 18000,
             "comments_text": 12000,
             "tags": 800,
