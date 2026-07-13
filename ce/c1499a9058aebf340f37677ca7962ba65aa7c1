@@ -1,0 +1,79 @@
+.github/workflows/test.yml
+  s_530c13eb65dd40::t_405266183979d6 19-52
+DEPLOY_HUGGINGFACE.md
+  s_530c13eb65dd40::t_d63002fe7515c9 10,32
+app/.gitignore
+  s_530c13eb65dd40::t_0fde9136ee50da 8-9,11-13
+app/core/data_lifecycle.py
+  s_530c13eb65dd40::t_a77f33af19ea81 1-234
+app/core/data_retention.py
+  s_530c13eb65dd40::t_144e3782a260d6 1-95
+app/core/evaluation_harness.py
+  s_530c13eb65dd40::t_c1603cce8ebc41 1-490
+app/core/growth_memory.py
+  s_530c13eb65dd40::t_7b3fcddc28b12c 9,12-13,23-27,29,51-131,137-138,142-143,153-155,157-159,162-163,172-175,177-184,186,189-192,195-196,198,200-217,220,225-230,242-243,252-262,264-265,272-304,306
+app/core/local_store.py
+  s_530c13eb65dd40::t_5d5eb19c5a1961 1-23
+app/core/memory_override_store.py
+  s_530c13eb65dd40::t_8e3911f7e8145e 1-178
+app/core/model_provider.py
+  s_530c13eb65dd40::t_9d8ae9e00b4480 61-65
+app/core/operational_log.py
+  s_530c13eb65dd40::t_2d28a83864325c 1-113
+app/core/research_grounding.py
+  s_530c13eb65dd40::t_84060c014a162d 25-57,62-82,223,235-236,238-242,245-247,291,356,375,420,463-480,486,512-522,528,574-577,579,581,583-584,596-597,662-673,684,688-689,713-734,747-753,762-768,773-778,780-784,788-796,798-807,809,820-821,824-830,841-843
+app/core/resume_store.py
+  s_530c13eb65dd40::t_3231afa2bb7f29 11-12,55-69,86
+app/core/task_store.py
+  s_530c13eb65dd40::t_d5ee2c85f3c650 1-328
+app/web/index.html
+  s_530c13eb65dd40::t_d3cd369a57ce22 27,34,42-43,50,59,62
+docs/design/ARCHITECTURE_EVOLUTION.md
+  s_530c13eb65dd40::t_c0bd9b9ee95166 26-31,70-80
+docs/design/DESIGN_DECISIONS.md
+  s_530c13eb65dd40::t_4f20db8118f280 70-71,81-82,89
+docs/design/PROJECT_OVERVIEW.md
+  s_530c13eb65dd40::t_4d39a22875e04f 30,44-46
+docs/guides/DATA_BACKUP.md
+  s_530c13eb65dd40::t_8b2ba842011a87 11-15,32,39-42,65-90
+scripts/browser_demo_smoke.mjs
+  s_530c13eb65dd40::t_458d5b01881d56 1-75
+scripts/resilience_drill.py
+  s_530c13eb65dd40::t_670ec0a8d72600 1-134
+scripts/static_demo_http_smoke.py
+  s_530c13eb65dd40::t_1d069b705d00c9 1-72
+skills/pm-interview-evaluation/SKILL.md
+  s_530c13eb65dd40::t_dc64d589db5d72 17-18,20-23,29,63-64
+skills/pm-interview-evaluation/references/xiaohongshu-search.md
+  s_530c13eb65dd40::t_b6ec7248750a84 3,6-11,13
+static_demo/README.md
+  s_530c13eb65dd40::t_3ec569918a2572 16-18,20-22
+static_demo/index.html
+  s_530c13eb65dd40::t_293a97ef5f23bc 34,42-43,50,52,59,62
+tests/fixtures/evaluation_cases.json
+  s_530c13eb65dd40::t_1cd0a622e06dea 1-44
+tests/fixtures/quality_gold_cases.json
+  s_530c13eb65dd40::t_677ca5168466f7 1-303
+tests/fixtures/relevance_cases.json
+  s_530c13eb65dd40::t_c659c7b082f1fb 1-120
+tests/fixtures/research_cases.json
+  s_530c13eb65dd40::t_5411b807d3411c 1-53
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "cec1499a9058aebf340f37677ca7962ba65aa7c1",
+  "prompts": {},
+  "sessions": {
+    "s_530c13eb65dd40": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5117-aef6-7ed3-9420-0cf41c972c31",
+        "model": "unknown"
+      },
+      "human_author": "Vergessen428 <Vergessen428@users.noreply.github.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
