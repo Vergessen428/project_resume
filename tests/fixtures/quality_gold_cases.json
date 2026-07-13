@@ -1,0 +1,303 @@
+[
+  {
+    "id": "sparse_metrics_and_attribution",
+    "transcript": "我做了报名提醒项目。DAU 上升，但报名率没有变化。我把需求拆成两期，先上线报名提醒。",
+    "gold": {
+      "annotation_version": "pm-gold-2026-07-14",
+      "score_ranges": {
+        "metrics_experiment": [1, 3],
+        "execution_collaboration": [3, 5]
+      },
+      "required_gap_ids": ["metrics_experiment__attribution"],
+      "min_verified_evidence": 2,
+      "min_executable_actions": 1,
+      "max_review_confidence": "medium",
+      "max_coach_score": 75,
+      "require_scored_by": true,
+      "comparable_labels": ["model_a", "model_b"],
+      "max_score_drift": 1
+    },
+    "outputs": [
+      {
+        "label": "model_a",
+        "expected_pass": true,
+        "review": {
+          "scored_by": {"provider": "openai", "model": "model-a", "prompt_version": "2.1", "rubric_version": "pm-rubric-2.0", "scored_at": "2026-07-14T00:00:00Z"},
+          "skill_diagnosis": [
+            {"skill_id": "metrics_experiment", "score": 2, "evidence": "DAU 上升，但报名率没有变化。", "dimensions": [
+              {"id": "definition", "score": 2, "status": "observed", "evidence": "DAU 上升，但报名率没有变化。"},
+              {"id": "attribution", "score": 1, "status": "contradicted", "evidence": "DAU 上升，但报名率没有变化。"}
+            ]},
+            {"skill_id": "execution_collaboration", "score": 4, "evidence": "我把需求拆成两期，先上线报名提醒。"}
+          ],
+          "gaps": [{"title": "缺乏归因意识", "canonical_gap_id": "metrics_experiment__attribution", "evidence": "DAU 上升，但报名率没有变化。"}],
+          "action_plan": [{"action": "重写指标与归因故事", "success_criteria": ["定义核心指标和护栏指标", "说明归因假设", "给出验证方法"], "next_validation": "下一场先说明报名率与 DAU 的关系。"}]
+        }
+      },
+      {
+        "label": "model_b",
+        "expected_pass": true,
+        "review": {
+          "scored_by": {"provider": "gemini", "model": "model-b", "prompt_version": "2.1", "rubric_version": "pm-rubric-2.0", "scored_at": "2026-07-14T00:00:01Z"},
+          "skill_diagnosis": [
+            {"skill_id": "metrics_experiment", "score": 3, "evidence": "DAU 上升，但报名率没有变化。", "dimensions": [{"id": "attribution", "score": 2, "status": "contradicted", "evidence": "DAU 上升，但报名率没有变化。"}]},
+            {"skill_id": "execution_collaboration", "score": 4, "evidence": "我把需求拆成两期，先上线报名提醒。"}
+          ],
+          "gaps": [{"title": "归因证据不足", "canonical_gap_id": "metrics_experiment__attribution", "evidence": "DAU 上升，但报名率没有变化。"}],
+          "action_plan": [{"action": "重写指标故事", "success_criteria": ["定义核心指标", "说明归因假设"], "next_validation": "下一场回答时先说验证方法。"}]
+        }
+      },
+      {
+        "label": "fabricated_model",
+        "expected_pass": false,
+        "review": {
+          "skill_diagnosis": [{"skill_id": "metrics_experiment", "score": 5, "evidence": "报名率提升 30%。"}],
+          "gaps": [{"title": "结果很好", "canonical_gap_id": "other", "evidence": "报名率提升 30%。"}]
+        }
+      }
+    ]
+  },
+  {
+    "id": "strong_metric_experiment",
+    "transcript": "我负责增长报名提醒。先把目标定义为报名率，不把 DAU 当结果指标；拆分曝光、点击、报名三个漏斗。上线前做 A/B 实验，实验组报名率从 8% 到 10%，对照组没有变化，观察两周并检查投诉率。开发资源不足时我和运营把活动入口拆成两期，先上线提醒。",
+    "gold": {
+      "annotation_version": "pm-gold-2026-07-14",
+      "score_ranges": {
+        "metrics_experiment": [4, 5],
+        "execution_collaboration": [3, 5]
+      },
+      "min_verified_evidence": 3,
+      "min_executable_actions": 1,
+      "require_scored_by": true,
+      "comparable_labels": ["model_a", "model_b"],
+      "max_score_drift": 1
+    },
+    "outputs": [
+      {
+        "label": "model_a",
+        "expected_pass": true,
+        "review": {
+          "scored_by": {"provider": "openai", "model": "model-a", "prompt_version": "2.1", "rubric_version": "pm-rubric-2.0", "scored_at": "2026-07-14T00:01:00Z"},
+          "skill_diagnosis": [
+            {"skill_id": "metrics_experiment", "score": 4, "evidence": "先把目标定义为报名率，不把 DAU 当结果指标；拆分曝光、点击、报名三个漏斗。", "dimensions": [{"id": "definition", "score": 4, "status": "observed", "evidence": "先把目标定义为报名率，不把 DAU 当结果指标。"}, {"id": "decomposition", "score": 4, "status": "observed", "evidence": "拆分曝光、点击、报名三个漏斗。"}, {"id": "experiment_quantify", "score": 4, "status": "observed", "evidence": "实验组报名率从 8% 到 10%，对照组没有变化。"}]},
+            {"skill_id": "execution_collaboration", "score": 4, "evidence": "开发资源不足时我和运营把活动入口拆成两期，先上线提醒。"}
+          ],
+          "action_plan": [{"action": "复述实验闭环", "success_criteria": ["先定义核心指标", "说明对照组和观察周期", "补充护栏指标"], "next_validation": "下一场用同一项目回答一次指标追问。"}]
+        }
+      },
+      {
+        "label": "model_b",
+        "expected_pass": true,
+        "review": {
+          "scored_by": {"provider": "gemini", "model": "model-b", "prompt_version": "2.1", "rubric_version": "pm-rubric-2.0", "scored_at": "2026-07-14T00:01:01Z"},
+          "skill_diagnosis": [
+            {"skill_id": "metrics_experiment", "score": 5, "evidence": "先把目标定义为报名率，不把 DAU 当结果指标；拆分曝光、点击、报名三个漏斗。", "dimensions": [{"id": "definition", "score": 5, "status": "observed", "evidence": "先把目标定义为报名率，不把 DAU 当结果指标。"}, {"id": "decomposition", "score": 5, "status": "observed", "evidence": "拆分曝光、点击、报名三个漏斗。"}, {"id": "attribution", "score": 5, "status": "observed", "evidence": "实验组报名率从 8% 到 10%，对照组没有变化。"}]},
+            {"skill_id": "execution_collaboration", "score": 4, "evidence": "开发资源不足时我和运营把活动入口拆成两期，先上线提醒。"}
+          ],
+          "action_plan": [{"action": "复述实验闭环", "success_criteria": ["说明实验设计", "说明护栏指标"], "next_validation": "下一场回答时先说结论再给数据。"}]
+        }
+      },
+      {
+        "label": "unsupported_model",
+        "expected_pass": false,
+        "review": {
+          "skill_diagnosis": [{"skill_id": "metrics_experiment", "score": 2, "evidence": "模型判断指标体系完善。"}]
+        }
+      }
+    ]
+  },
+  {
+    "id": "multi_round_missing_quantification",
+    "transcript": "面试官追问这个项目带来了什么结果。我回答：用户反馈变好了，核心流程也顺了。面试官继续问提升了多少，我没有给出具体数字，只说后面感觉转化不错。",
+    "gold": {
+      "annotation_version": "pm-gold-2026-07-14",
+      "score_ranges": {"structured_communication": [1, 4]},
+      "unscored_skill_ids": ["metrics_experiment"],
+      "required_gap_ids": ["metrics_experiment__quantify"],
+      "min_verified_evidence": 2,
+      "min_verified_question_evidence": 1,
+      "min_executable_actions": 1,
+      "max_review_confidence": "medium",
+      "max_coach_score": 70,
+      "require_scored_by": true,
+      "comparable_labels": ["model_a", "model_b"],
+      "max_score_drift": 1
+    },
+    "outputs": [
+      {
+        "label": "model_a",
+        "expected_pass": true,
+        "review": {
+          "scored_by": {"provider": "openai", "model": "model-a", "prompt_version": "2.1", "rubric_version": "pm-rubric-2.0", "scored_at": "2026-07-14T00:02:00Z"},
+          "skill_diagnosis": [
+            {"skill_id": "metrics_experiment", "score": 2, "evidence": "没有给出具体数字，只说后面感觉转化不错。", "dimensions": [{"id": "experiment_quantify", "score": 1, "status": "missing", "evidence": "没有给出具体数字，只说后面感觉转化不错。"}]},
+            {"skill_id": "structured_communication", "score": 2, "evidence": "用户反馈变好了，核心流程也顺了。"}
+          ],
+          "gaps": [{"title": "结果缺少量化", "canonical_gap_id": "metrics_experiment__quantify", "evidence": "没有给出具体数字，只说后面感觉转化不错。"}],
+          "questions": [{"question": "如果面试官再次追问结果，你会补充哪些指标和时间窗口？", "evidence": "面试官继续问提升了多少，我没有给出具体数字", "score": 2}],
+          "action_plan": [{"action": "重写项目结果段落", "success_criteria": ["定义一个结果指标和口径", "补充基线、变化和观察周期", "说明无法量化时的替代证据"], "next_validation": "下一次项目复盘时先用三句话说清结果指标。"}]
+        }
+      },
+      {
+        "label": "model_b",
+        "expected_pass": true,
+        "review": {
+          "scored_by": {"provider": "gemini", "model": "model-b", "prompt_version": "2.1", "rubric_version": "pm-rubric-2.0", "scored_at": "2026-07-14T00:02:01Z"},
+          "skill_diagnosis": [
+            {"skill_id": "metrics_experiment", "score": 3, "evidence": "后面感觉转化不错。", "dimensions": [{"id": "experiment_quantify", "score": 2, "status": "missing", "evidence": "后面感觉转化不错。"}]},
+            {"skill_id": "structured_communication", "score": 2, "evidence": "用户反馈变好了，核心流程也顺了。"}
+          ],
+          "gaps": [{"title": "没有量化结果", "canonical_gap_id": "metrics_experiment__quantify", "evidence": "面试官继续问提升了多少，我没有给出具体数字"}],
+          "questions": [{"question": "如何补充项目结果？", "evidence": "面试官继续问提升了多少，我没有给出具体数字", "score": 2}],
+          "action_plan": [{"action": "补齐结果量化", "success_criteria": ["给出核心指标和口径", "说明基线与变化"], "next_validation": "下一次回答时先讲结果，再讲方案。"}]
+        }
+      },
+      {
+        "label": "fabricated_followup_model",
+        "expected_pass": false,
+        "review": {
+          "skill_diagnosis": [{"skill_id": "metrics_experiment", "score": 4, "evidence": "转化率提升 35%。"}],
+          "questions": [{"question": "转化率提升了多少？", "evidence": "转化率提升 35%。"}],
+          "gaps": [],
+          "action_plan": []
+        }
+      }
+    ]
+  },
+  {
+    "id": "contradictory_experiment_followup",
+    "transcript": "我说报名率从 8% 到 10%，后来追问发现没有对照组，只是上线前后对比；面试官问能不能证明是提醒带来的，我承认无法归因，准备补埋点。",
+    "gold": {
+      "annotation_version": "pm-gold-2026-07-14",
+      "score_ranges": {
+        "metrics_experiment": [1, 3],
+        "structured_communication": [2, 4]
+      },
+      "required_gap_ids": ["metrics_experiment__attribution"],
+      "min_verified_evidence": 3,
+      "min_verified_question_evidence": 1,
+      "min_executable_actions": 1,
+      "max_review_confidence": "medium",
+      "max_coach_score": 75,
+      "require_scored_by": true,
+      "comparable_labels": ["model_a", "model_b"],
+      "max_score_drift": 1
+    },
+    "outputs": [
+      {
+        "label": "model_a",
+        "expected_pass": true,
+        "review": {
+          "scored_by": {"provider": "openai", "model": "model-a", "prompt_version": "2.1", "rubric_version": "pm-rubric-2.0", "scored_at": "2026-07-14T00:03:00Z"},
+          "review_quality": {"confidence": "medium"},
+          "score_summary": {"coach_score": 58},
+          "skill_diagnosis": [
+            {"skill_id": "metrics_experiment", "score": 2, "evidence": "没有对照组，只是上线前后对比；", "dimensions": [
+              {"id": "attribution", "score": 1, "status": "contradicted", "evidence": "没有对照组，只是上线前后对比；", "rationale": "上线前后变化不能单独证明提醒造成变化。"},
+              {"id": "experiment_quantify", "score": 3, "status": "observed", "evidence": "报名率从 8% 到 10%"}
+            ]},
+            {"skill_id": "structured_communication", "score": 3, "evidence": "面试官问能不能证明是提醒带来的，我承认无法归因，准备补埋点。"}
+          ],
+          "gaps": [{"title": "前后对比缺少归因", "canonical_gap_id": "metrics_experiment__attribution", "evidence": "没有对照组，只是上线前后对比；"}],
+          "questions": [{"question": "如果没有对照组，下一步如何补验证？", "evidence": "面试官问能不能证明是提醒带来的", "score": 2}],
+          "action_plan": [{"action": "重写实验归因段落", "success_criteria": ["区分相关性与因果性", "说明对照或替代验证方法"], "next_validation": "下一次先说明不能仅凭前后对比归因。"}]
+        }
+      },
+      {
+        "label": "model_b",
+        "expected_pass": true,
+        "review": {
+          "scored_by": {"provider": "gemini", "model": "model-b", "prompt_version": "2.1", "rubric_version": "pm-rubric-2.0", "scored_at": "2026-07-14T00:03:01Z"},
+          "review_quality": {"confidence": "medium"},
+          "score_summary": {"coach_score": 60},
+          "skill_diagnosis": [
+            {"skill_id": "metrics_experiment", "score": 3, "evidence": "我承认无法归因，准备补埋点。", "dimensions": [
+              {"id": "attribution", "score": 2, "status": "contradicted", "evidence": "没有对照组，只是上线前后对比；"},
+              {"id": "experiment_quantify", "score": 3, "status": "observed", "evidence": "报名率从 8% 到 10%"}
+            ]},
+            {"skill_id": "structured_communication", "score": 3, "evidence": "面试官问能不能证明是提醒带来的，我承认无法归因，准备补埋点。"}
+          ],
+          "gaps": [{"title": "归因结论需要验证", "canonical_gap_id": "metrics_experiment__attribution", "evidence": "面试官问能不能证明是提醒带来的"}],
+          "questions": [{"question": "如何设计下一轮验证？", "evidence": "准备补埋点", "score": 2}],
+          "action_plan": [{"action": "补齐归因验证方案", "success_criteria": ["说明对照组或替代方案", "定义护栏指标和观察周期"], "next_validation": "下一次回答明确区分结果数字和归因结论。"}]
+        }
+      },
+      {
+        "label": "fabricated_confident_model",
+        "expected_pass": false,
+        "review": {
+          "scored_by": {"provider": "openai", "model": "model-a", "prompt_version": "2.1", "rubric_version": "pm-rubric-2.0", "scored_at": "2026-07-14T00:03:02Z"},
+          "review_quality": {"confidence": "high"},
+          "score_summary": {"coach_score": 90},
+          "skill_diagnosis": [{"skill_id": "metrics_experiment", "score": 5, "evidence": "报名率从 8% 到 10%"}],
+          "gaps": [],
+          "action_plan": []
+        }
+      }
+    ]
+  },
+  {
+    "id": "jd_business_fit_missing",
+    "transcript": "JD 强调 B 端 SaaS 产品和客户续费。我主要讲了一个面向 C 端用户的增长项目：做了活动入口和推送，用户增长了，但没有提目标客户、续费场景或企业业务约束。",
+    "gold": {
+      "annotation_version": "pm-gold-2026-07-14",
+      "score_ranges": {
+        "business_context": [1, 3],
+        "structured_communication": [2, 4]
+      },
+      "unscored_skill_ids": ["business_context"],
+      "required_gap_ids": ["business_context__jd_link"],
+      "min_verified_evidence": 2,
+      "min_executable_actions": 1,
+      "max_review_confidence": "medium",
+      "max_coach_score": 75,
+      "require_scored_by": true,
+      "comparable_labels": ["model_a", "model_b"],
+      "max_score_drift": 1
+    },
+    "outputs": [
+      {
+        "label": "model_a",
+        "expected_pass": true,
+        "review": {
+          "scored_by": {"provider": "openai", "model": "model-a", "prompt_version": "2.1", "rubric_version": "pm-rubric-2.0", "scored_at": "2026-07-14T00:04:00Z"},
+          "review_quality": {"confidence": "medium"},
+          "score_summary": {"coach_score": 55},
+          "skill_diagnosis": [
+            {"skill_id": "business_context", "score": 2, "evidence": "没有提目标客户、续费场景或企业业务约束。", "dimensions": [{"id": "jd_link", "score": 1, "status": "missing", "evidence": "没有提目标客户、续费场景或企业业务约束。"}]},
+            {"skill_id": "structured_communication", "score": 3, "evidence": "我主要讲了一个面向 C 端用户的增长项目：做了活动入口和推送"}
+          ],
+          "gaps": [{"title": "经历没有连接 JD 业务", "canonical_gap_id": "business_context__jd_link", "evidence": "JD 强调 B 端 SaaS 产品和客户续费。"}],
+          "action_plan": [{"action": "把项目改写成 B 端场景的迁移说明", "success_criteria": ["明确企业客户和续费目标", "说明 C 端经验不能直接等同的边界"], "next_validation": "下一次回答先讲 JD 场景，再说明项目可迁移能力。"}]
+        }
+      },
+      {
+        "label": "model_b",
+        "expected_pass": true,
+        "review": {
+          "scored_by": {"provider": "gemini", "model": "model-b", "prompt_version": "2.1", "rubric_version": "pm-rubric-2.0", "scored_at": "2026-07-14T00:04:01Z"},
+          "review_quality": {"confidence": "medium"},
+          "score_summary": {"coach_score": 57},
+          "skill_diagnosis": [
+            {"skill_id": "business_context", "score": 3, "evidence": "没有提目标客户、续费场景或企业业务约束。", "dimensions": [{"id": "jd_link", "score": 2, "status": "missing", "evidence": "没有提目标客户、续费场景或企业业务约束。"}]},
+            {"skill_id": "structured_communication", "score": 3, "evidence": "我主要讲了一个面向 C 端用户的增长项目"}
+          ],
+          "gaps": [{"title": "需要补岗位映射", "canonical_gap_id": "business_context__jd_link", "evidence": "没有提目标客户、续费场景或企业业务约束。"}],
+          "action_plan": [{"action": "补写岗位映射段落", "success_criteria": ["说清 JD 的目标客户和业务指标", "解释已有经验的可迁移部分"], "next_validation": "下一次用岗位关键词检查答案是否覆盖。"}]
+        }
+      },
+      {
+        "label": "unsupported_fit_model",
+        "expected_pass": false,
+        "review": {
+          "scored_by": {"provider": "openai", "model": "model-a", "prompt_version": "2.1", "rubric_version": "pm-rubric-2.0", "scored_at": "2026-07-14T00:04:02Z"},
+          "review_quality": {"confidence": "high"},
+          "score_summary": {"coach_score": 88},
+          "skill_diagnosis": [{"skill_id": "business_context", "score": 5, "evidence": "我主要讲了一个面向 C 端用户的增长项目"}],
+          "gaps": [],
+          "action_plan": []
+        }
+      }
+    ]
+  }
+]

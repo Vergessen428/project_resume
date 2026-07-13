@@ -1,8 +1,10 @@
 """Evidence-oriented interview review generator (model-agnostic)."""
 
+import hashlib
 import json
 import re
 import uuid
+from datetime import datetime, timezone
 from typing import Any, Dict, List
 
 from .pm_skills import (
@@ -16,6 +18,10 @@ from .pm_skills import (
     gap_tags_prompt,
     prompt_rubric,
 )
+
+
+REVIEW_PROMPT_VERSION = "2.1"
+RUBRIC_VERSION = "pm-rubric-2.0"
 
 
 def generate_interview_review(
@@ -41,7 +47,7 @@ signals, not objective truth.
 
 Return ONLY one valid JSON object with this exact shape:
 {{
-  "schema_version":"2.0",
+  "schema_version":"2.1",
   "summary": "2-4 sentence Chinese summary",
   "score_summary": {{"coach_score":0,"strongest_skill":"","priority_skills":[],"training_band":"证据不足|基础可用|需要针对性训练|可进入强化训练"}},
   "review_quality": {{"data_quality":"","confidence":"low|medium|high"}},
@@ -49,7 +55,7 @@ Return ONLY one valid JSON object with this exact shape:
   "gaps": [{{"title":"", "canonical_gap_id":"", "evidence":"", "improvement":""}}],
   "questions": [{{"question":"", "answer_summary":"", "evidence":"", "assessment":"", "score":1, "skills":[], "evidence_quality":"verified|unverified|missing", "next_practice":""}}],
   "skill_diagnosis": [{{"skill_id":"", "skill_name":"", "score":1, "score_rationale":"", "evidence":"", "diagnosis":"", "evidence_profile":{{"specificity":0,"ownership":0,"causality":0,"result_quality":0,"reflection":0,"probe_resilience":0}}, "dimensions":[{{"id":"","score":1,"status":"observed|missing|contradicted|not_applicable","evidence":"","rationale":""}}], "gaps":[{{"gap_id":"","severity":"high|medium|low","evidence":"","impact":""}}], "next_practice":{{"action":"","prompt":"","success_criteria":[],"follow_up_question":""}}}}],
-  "action_plan": [{{"action":"", "priority":"高|中|低", "reason":""}}],
+  "action_plan": [{{"action":"", "priority":"高|中|低", "reason":"", "success_criteria":[], "next_validation":"", "source_skill_ids":[], "source_gap_ids":[]}}],
   "follow_up": "A concise, appropriate follow-up suggestion, or an empty string if not applicable."
 }}
 
@@ -68,7 +74,8 @@ Score anchors:
 {score_anchors}
 
 Each skill must cover the following weighted diagnostic dimensions. Score each dimension independently
-from 1 to 5, mark whether it is observed/missing/contradicted/not_applicable, and quote evidence only
+from 1 to 5 only when the transcript supports it; for missing or not_applicable dimensions, return
+"score": null. Mark whether it is observed/missing/contradicted/not_applicable, and quote evidence only
 when the transcript supports it:
 {skill_dimensions}
 
@@ -80,7 +87,9 @@ If the transcript is sparse, say so in summary and create fewer items instead of
 Evaluate every applicable PM skill below. A score is a coaching signal, not objective truth, and must use
 evidence from this interview. The external source list is optional context only: never make it sound like
 the candidate was asked something unless the transcript says so. Cite an external source by its title only
-when it helps suggest a practice angle, and say it is a public reference rather than a fact.
+when it helps suggest a practice angle, and say it is a public reference rather than a fact. Each source
+has a citation_allowed flag: only sources with citation_allowed=true are approved context; candidate or
+unverified sources may shape a follow-up question but must never be used as interview evidence or factual proof.
 
 PM coaching skills:
 {pm_skills}
@@ -123,7 +132,12 @@ Compact long-term memory (may be empty; do not treat it as evidence for this int
     )
     content = model.complete(prompt)
     parsed = _parse_json(content)
-    return _normalise_review(parsed, transcript=interview.get("transcript", ""))
+    return _normalise_review(
+        parsed,
+        transcript=interview.get("transcript", ""),
+        scored_by=build_scored_by(model),
+        allow_legacy_score=False,
+    )
 
 
 def generate_growth_report(model: Any, interviews: List[Dict[str, Any]], memory: Dict[str, Any]) -> Dict[str, Any]:
@@ -137,7 +151,10 @@ def generate_growth_report(model: Any, interviews: List[Dict[str, Any]], memory:
             "role": interview.get("role", ""),
             "round_name": interview.get("round_name", ""),
             "date": interview.get("date", ""),
+            "outcome": interview.get("outcome", ""),
+            "outcome_source": interview.get("outcome_source", ""),
             "summary": str(review.get("summary", ""))[:800],
+            "scored_by": review.get("scored_by", {}),
             "gaps": review.get("gaps", [])[:4],
             "skill_diagnosis": review.get("skill_diagnosis", [])[:6],
             "action_plan": review.get("action_plan", [])[:5],
@@ -152,7 +169,7 @@ Return ONLY JSON:
   "stage_assessment":"what the data currently supports",
   "growth_signals":[{"title":"", "evidence":"", "interpretation":""}],
   "recurring_patterns":[{"skill":"", "evidence":"", "occurrences":1, "recommendation":""}],
-  "priority_training":[{"action":"", "why_now":"", "success_criterion":""}],
+  "priority_training":[{"action":"", "why_now":"", "success_criterion":"", "source":""}],
   "next_interview_focus":[""],
   "data_quality":"what is missing or too sparse for a firm conclusion"
 }
@@ -173,7 +190,7 @@ Reviewed interview records:
         records=json.dumps(reviewed[-12:], ensure_ascii=False),
     )
     content = model.complete(prompt)
-    return _normalise_growth_report(_parse_json(content))
+    return _normalise_growth_report(_parse_json(content), memory=memory)
 
 
 def extract_job_description(model: Any, job_description: str) -> Dict[str, Any]:
@@ -320,6 +337,8 @@ def sample_interview() -> Dict[str, str]:
         "round_name": "业务一面",
         "date": "2026-09-18",
         "status": "已面试",
+        "outcome": "pending",
+        "outcome_source": "self_reported",
         "job_description": "负责 AI 产品需求分析、指标设计、跨团队推进和用户反馈闭环。要求能清晰拆解问题并使用数据验证方案。",
         "resume_context": "做过校园产品项目，负责用户调研、PRD、埋点设计和两周迭代。希望转向 AI 产品方向。",
         "transcript": "面试官让我先介绍一个自己主导的项目，我讲了校园活动小程序，目标是提升同学报名率。\n他问我怎么判断项目是否成功，我说主要看 DAU 和报名人数，后来 DAU 涨了。\n接着追问为什么是这两个指标，这里我答得比较虚，大意是用户多了报名就会多。\n又问项目里最大的分歧，我说运营想多做活动入口、开发觉得时间不够，我把需求拆成两期，先上线报名提醒。\n最后问这个取舍带来什么结果，我说第一周报名比以前多了一些，但具体数值记不清了。",
@@ -346,10 +365,16 @@ def sample_review() -> Dict[str, Any]:
             {"skill_id": "story_ownership", "skill_name": "项目主导力", "score": 4, "score_rationale": "接近锚点 5：有清晰的个人决策，但结果量化欠缺。", "evidence": "我把需求拆成两期，先上线报名提醒。", "diagnosis": "有清晰的个人决策和取舍。", "next_practice": "补上决策带来的量化结果。"},
         ],
         "action_plan": [
-            {"action": "用北极星+护栏指标重写这个项目的成功定义", "priority": "高", "reason": "指标是本场最大失分点。"},
-            {"action": "补齐项目关键数字并做一版量化结果收尾", "priority": "中", "reason": "结果模糊会削弱说服力。"},
+            {"action": "用北极星+护栏指标重写这个项目的成功定义", "priority": "高", "reason": "指标是本场最大失分点。", "success_criteria": ["定义核心和护栏指标", "说明归因假设", "给出验证方法"], "next_validation": "下一场被追问成功标准时，先说指标口径再说验证。"},
+            {"action": "补齐项目关键数字并做一版量化结果收尾", "priority": "中", "reason": "结果模糊会削弱说服力。", "success_criteria": ["给出变化幅度", "说明样本和周期", "说清结果如何影响下一步"], "next_validation": "下一场项目深挖时，用结果数字完成结尾。"},
         ],
         "follow_up": "下一场面试前，准备一个能讲清指标定义、归因和量化结果的完整项目故事。",
+    }, transcript=sample_interview()["transcript"], scored_by={
+        "provider": "demo_fixture",
+        "model": "static-sample",
+        "prompt_version": REVIEW_PROMPT_VERSION,
+        "rubric_version": RUBRIC_VERSION,
+        "scored_at": "2026-09-18T10:00:00+00:00",
     })
 
 
@@ -388,7 +413,7 @@ def _evidence_verifier(transcript: str):
         if not evidence:
             return _EVIDENCE_UNVERIFIED
         if not haystack:
-            return evidence
+            return _EVIDENCE_UNVERIFIED
         needle = _evidence_normalise(evidence)
         if len(needle) >= 4 and needle in haystack:
             return evidence
@@ -443,7 +468,7 @@ def _normalise_practice_plan(raw: Any, legacy_text: str = "") -> Dict[str, Any]:
     }
 
 
-def _normalise_skill_diagnosis(item: Dict[str, Any], verify: Any) -> Dict[str, Any]:
+def _normalise_skill_diagnosis(item: Dict[str, Any], verify: Any, allow_legacy_score: bool = True) -> Dict[str, Any]:
     skill_id = str(item.get("skill_id", ""))[:80]
     catalog = PM_SKILL_DIMENSIONS.get(skill_id, [])
     raw_dimensions = item.get("dimensions")
@@ -473,7 +498,11 @@ def _normalise_skill_diagnosis(item: Dict[str, Any], verify: Any) -> Dict[str, A
             evidence = verify(raw_dimension.get("evidence", ""))
             if status in {"observed", "contradicted"} and evidence == _EVIDENCE_UNVERIFIED:
                 status = "unverified"
-            score = _bounded_score(raw_dimension.get("score")) if status in {"observed", "contradicted", "unverified"} else None
+            # Missing evidence is not a measured performance level. Ignore a
+            # model-supplied fallback score for this dimension.
+            # An unverified quote can remain visible as a review warning, but
+            # it must not enter the weighted score or long-term aggregate.
+            score = _bounded_score(raw_dimension.get("score")) if status in {"observed", "contradicted"} else None
             rationale = str(raw_dimension.get("rationale", ""))[:800]
 
         weight = int(definition["weight"])
@@ -504,9 +533,18 @@ def _normalise_skill_diagnosis(item: Dict[str, Any], verify: Any) -> Dict[str, A
             1,
         )
         score = max(1, min(5, int(exact_score + 0.5)))
-    else:
+    elif raw_dimensions is None and allow_legacy_score:
+        # A pre-V2/legacy record may only have a skill-level score. Keep that
+        # historical value readable, but never treat it as a new fixed-weight
+        # score when the V2 dimensions were explicitly supplied without proof.
         score = _bounded_score(item.get("score"))
         exact_score = float(score)
+    else:
+        # A V2 item with no verified, weighted dimensions is not scoreable.
+        # Returning null is more honest than allowing the model's unweighted
+        # fallback score to enter the aggregate.
+        score = None
+        exact_score = None
     coverage = round(covered_weight / applicable_weight, 2) if applicable_weight else 0.0
     if coverage >= 0.75 and len(verified_evidence) >= 2:
         confidence = "high"
@@ -543,7 +581,7 @@ def _normalise_skill_diagnosis(item: Dict[str, Any], verify: Any) -> Dict[str, A
         "exact_score": exact_score,
         "confidence": confidence,
         "evidence_coverage": coverage,
-        "anchor_match": _bounded_score(item.get("anchor_match"), score),
+        "anchor_match": _bounded_score(item.get("anchor_match"), score) if score is not None else None,
         "score_rationale": str(item.get("score_rationale", ""))[:800],
         "evidence_profile": {
             key: _bounded_int((item.get("evidence_profile") or {}).get(key, 0), 0, 3)
@@ -560,7 +598,38 @@ def _normalise_skill_diagnosis(item: Dict[str, Any], verify: Any) -> Dict[str, A
     }
 
 
-def _normalise_review(raw: Dict[str, Any], transcript: str = "") -> Dict[str, Any]:
+def build_scored_by(model: Any) -> Dict[str, str]:
+    """Capture factual model metadata after the provider call has succeeded."""
+    return {
+        "provider": str(
+            getattr(model, "active_provider", "")
+            or getattr(model, "provider_name", "")
+            or "legacy_unknown"
+        )[:80],
+        "model": str(getattr(model, "model", "") or "legacy_unknown")[:160],
+        "prompt_version": REVIEW_PROMPT_VERSION,
+        "rubric_version": RUBRIC_VERSION,
+        "scored_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    }
+
+
+def _normalise_scored_by(raw: Any) -> Dict[str, str]:
+    raw = raw if isinstance(raw, dict) else {}
+    return {
+        "provider": str(raw.get("provider", "legacy_unknown")).strip()[:80] or "legacy_unknown",
+        "model": str(raw.get("model", "legacy_unknown")).strip()[:160] or "legacy_unknown",
+        "prompt_version": str(raw.get("prompt_version", "legacy_unknown")).strip()[:40] or "legacy_unknown",
+        "rubric_version": str(raw.get("rubric_version", "legacy_unknown")).strip()[:40] or "legacy_unknown",
+        "scored_at": str(raw.get("scored_at", "")).strip()[:40],
+    }
+
+
+def _normalise_review(
+    raw: Dict[str, Any],
+    transcript: str = "",
+    scored_by: Dict[str, Any] = None,
+    allow_legacy_score: bool = True,
+) -> Dict[str, Any]:
     verify = _evidence_verifier(transcript)
 
     def list_of_dicts(value: Any) -> List[Dict[str, Any]]:
@@ -568,28 +637,79 @@ def _normalise_review(raw: Dict[str, Any], transcript: str = "") -> Dict[str, An
 
     questions = []
     for item in list_of_dicts(raw.get("questions")):
+        raw_evidence = str(item.get("evidence", "")).strip()
+        normalised_evidence = verify(raw_evidence)
+        evidence_quality = (
+            "verified"
+            if normalised_evidence != _EVIDENCE_UNVERIFIED
+            else ("missing" if not raw_evidence else "unverified")
+        )
         questions.append(
             {
                 "question": str(item.get("question", "未识别问题"))[:500],
                 "answer_summary": str(item.get("answer_summary", ""))[:1000],
-                "evidence": verify(item.get("evidence", "")),
+                "evidence": normalised_evidence,
                 "assessment": str(item.get("assessment", ""))[:1000],
                 "score": _bounded_score(item.get("score")),
                 "skills": [str(value)[:80] for value in item.get("skills", []) if str(value).strip()][:4],
-                "evidence_quality": "verified" if verify(item.get("evidence", "")) != _EVIDENCE_UNVERIFIED else "unverified",
+                "evidence_quality": evidence_quality,
                 "next_practice": str(item.get("next_practice", ""))[:1000],
             }
         )
 
     actions = []
     for item in list_of_dicts(raw.get("action_plan")):
+        acceptance_status = str(item.get("acceptance_status", "pending")).strip().lower()
+        if acceptance_status not in {"pending", "passed", "needs_retry"}:
+            acceptance_status = "pending"
+        criteria = item.get("success_criteria") if isinstance(item.get("success_criteria"), list) else []
+        raw_skill_ids = item.get("source_skill_ids") or item.get("skill_ids") or []
+        source_skill_ids = [
+            str(value).strip()[:80]
+            for value in raw_skill_ids
+            if str(value).strip() in PM_SKILL_DIMENSIONS
+        ][:4] if isinstance(raw_skill_ids, list) else []
+        raw_gap_ids = item.get("source_gap_ids") or item.get("gap_ids") or []
+        source_gap_ids = [
+            canonicalize_gap_id(value)
+            for value in raw_gap_ids
+            if canonicalize_gap_id(value) != "other"
+        ][:4] if isinstance(raw_gap_ids, list) else []
+        action_material = "|".join([
+            str(item.get("action", "")).strip(),
+            str(item.get("priority", "中")).strip(),
+            str(item.get("next_validation", "")).strip(),
+            "|".join(str(value).strip() for value in criteria if str(value).strip()),
+        ])
+        if source_skill_ids or source_gap_ids:
+            action_material = "skills=%s|gaps=%s" % (
+                ",".join(sorted(source_skill_ids)),
+                ",".join(sorted(source_gap_ids)),
+            )
+        # The key is stable across repeated model reviews of the same action.
+        action_key = "action-" + hashlib.sha256(action_material.encode("utf-8")).hexdigest()[:20]
         actions.append(
             {
-                "id": uuid.uuid4().hex[:10],
+                "id": action_key,
+                "action_key": action_key,
                 "action": str(item.get("action", "补充一项练习"))[:500],
                 "priority": str(item.get("priority", "中"))[:10],
                 "reason": str(item.get("reason", ""))[:700],
+                "success_criteria": [str(value)[:300] for value in criteria if str(value).strip()][:4],
+                "next_validation": str(item.get("next_validation", ""))[:500],
+                "source_skill_ids": source_skill_ids,
+                "source_gap_ids": source_gap_ids,
                 "done": False,
+                "completed_at": "",
+                "acceptance_status": acceptance_status,
+                "acceptance_note": "",
+                "training_progress": {
+                    "pre_test": False,
+                    "rewrite": False,
+                    "post_test": False,
+                    "attempt_count": 0,
+                },
+                "attempts": [],
             }
         )
 
@@ -604,15 +724,35 @@ def _normalise_review(raw: Dict[str, Any], transcript: str = "") -> Dict[str, An
             result.append(entry)
         return result
 
-    skills = []
+    raw_skills = {}
     for item in list_of_dicts(raw.get("skill_diagnosis")):
-        skills.append(_normalise_skill_diagnosis(item, verify))
+        candidate_id = str(item.get("skill_id", "")).strip()
+        if candidate_id in PM_SKILL_DIMENSIONS and candidate_id not in raw_skills:
+            raw_skills[candidate_id] = item
 
-    skill_scores = [item["exact_score"] for item in skills]
+    # Always emit the complete six-skill contract. Missing skills are explicit
+    # gaps in observation, not silent omissions and not zero-point hiring scores.
+    skills = []
+    for definition in PM_SKILLS:
+        skill_id = definition["id"]
+        item = raw_skills.get(skill_id)
+        if item is None:
+            item = {
+                "skill_id": skill_id,
+                "skill_name": definition["name"],
+                "dimensions": [],
+                "diagnosis": "本次转写没有覆盖该能力，暂不评分。",
+                "next_practice": {"action": "补充一个与该能力相关的项目例子。"},
+            }
+        normalised_skill = _normalise_skill_diagnosis(item, verify, allow_legacy_score=allow_legacy_score)
+        skills.append(normalised_skill)
+
+    skill_scores = [item["exact_score"] for item in skills if isinstance(item.get("exact_score"), (int, float))]
     coach_score = round(sum(skill_scores) / len(skill_scores) * 20) if skill_scores else 0
-    strongest_skill = max(skills, key=lambda item: item["exact_score"], default={}).get("skill_id", "")
+    scored_skills = [item for item in skills if isinstance(item.get("exact_score"), (int, float))]
+    strongest_skill = max(scored_skills, key=lambda item: item["exact_score"], default={}).get("skill_id", "")
     priority_skills = [
-        item["skill_id"] for item in sorted(skills, key=lambda value: (value["score"], value["evidence_coverage"]))
+        item["skill_id"] for item in sorted(scored_skills, key=lambda value: (value["score"], value["evidence_coverage"]))
         if item["score"] <= 2 or any(gap.get("severity") == "high" for gap in item["gaps"])
     ][:3]
     coverage_values = [item["evidence_coverage"] for item in skills]
@@ -631,7 +771,8 @@ def _normalise_review(raw: Dict[str, Any], transcript: str = "") -> Dict[str, An
         data_quality = "证据覆盖较完整。" if evidence_coverage >= 0.75 else "部分能力缺少可核对的原文证据，分数应作为训练信号使用。"
 
     return {
-        "schema_version": "2.0",
+        "schema_version": "2.1",
+        "scored_by": _normalise_scored_by(scored_by or raw.get("scored_by")),
         "summary": str(raw.get("summary", "暂未生成总结。"))[:2500],
         "score_summary": {
             "coach_score": max(0, min(100, coach_score)),
@@ -656,7 +797,36 @@ def _normalise_review(raw: Dict[str, Any], transcript: str = "") -> Dict[str, An
     }
 
 
-def _normalise_growth_report(raw: Dict[str, Any]) -> Dict[str, Any]:
+def _memory_source_evidence(sources: Any) -> str:
+    rows = []
+    for source in sources if isinstance(sources, list) else []:
+        if not isinstance(source, dict):
+            continue
+        label = " · ".join(
+            str(source.get(key, "")).strip()
+            for key in ("company", "round_name", "date")
+            if str(source.get(key, "")).strip()
+        ) or "未命名面试"
+        evidence = str(source.get("evidence", "")).strip()
+        rows.append("%s%s" % (label, " · 证据：%s" % evidence if evidence else ""))
+        if len(rows) >= 3:
+            break
+    return "；".join(rows)[:1200] or "长期记忆没有保存可展开的原文证据。"
+
+
+def _model_explanation_for(keys: List[str], items: Any, field: str) -> str:
+    if not any(str(key or "").strip() for key in keys):
+        return ""
+    for item in items if isinstance(items, list) else []:
+        if not isinstance(item, dict):
+            continue
+        haystack = " ".join(str(item.get(key, "")).lower() for key in ("skill", "title", "evidence"))
+        if any(str(key).lower() in haystack for key in keys if str(key).strip()):
+            return str(item.get(field, "")).strip()[:1000]
+    return ""
+
+
+def _normalise_growth_report(raw: Dict[str, Any], memory: Dict[str, Any] = None) -> Dict[str, Any]:
     def list_of_dicts(value: Any, fields: List[str]) -> List[Dict[str, Any]]:
         result = []
         for item in value if isinstance(value, list) else []:
@@ -664,7 +834,7 @@ def _normalise_growth_report(raw: Dict[str, Any]) -> Dict[str, Any]:
                 result.append({field: str(item.get(field, ""))[:1000] for field in fields})
         return result[:4]
 
-    return {
+    report = {
         "summary": str(raw.get("summary", ""))[:2500],
         "stage_assessment": str(raw.get("stage_assessment", ""))[:1800],
         "growth_signals": list_of_dicts(raw.get("growth_signals"), ["title", "evidence", "interpretation"]),
@@ -672,10 +842,99 @@ def _normalise_growth_report(raw: Dict[str, Any]) -> Dict[str, Any]:
             {**item, "occurrences": _as_count(item.get("occurrences"))}
             for item in list_of_dicts(raw.get("recurring_patterns"), ["skill", "evidence", "occurrences", "recommendation"])
         ],
-        "priority_training": list_of_dicts(raw.get("priority_training"), ["action", "why_now", "success_criterion"]),
+        "priority_training": list_of_dicts(raw.get("priority_training"), ["action", "why_now", "success_criterion", "source"]),
         "next_interview_focus": _string_list(raw.get("next_interview_focus"))[:4],
         "data_quality": str(raw.get("data_quality", ""))[:1500],
     }
+    if not isinstance(memory, dict):
+        return report
+
+    # The model may explain the computed memory, but it cannot create a new
+    # trend, occurrence count, evidence source, or training action.
+    raw_patterns = raw.get("recurring_patterns") if isinstance(raw, dict) else []
+    grounded_patterns = []
+    for gap in memory.get("recurring_gaps", []) if isinstance(memory.get("recurring_gaps"), list) else []:
+        if not isinstance(gap, dict):
+            continue
+        canonical = str(gap.get("canonical_gap_id", "")).strip()
+        title = str(gap.get("title", "")).strip()[:300]
+        keys = [key for key in (canonical, title) if key]
+        recommendation = _model_explanation_for(keys, raw_patterns, "recommendation")
+        grounded_patterns.append({
+            "skill": canonical or title or "长期缺口",
+            "evidence": _memory_source_evidence(gap.get("sources")),
+            "occurrences": _as_count(gap.get("occurrences")),
+            "recommendation": recommendation or "围绕该缺口完成一次训练，并在下一场面试中验证。",
+        })
+        if len(grounded_patterns) >= 4:
+            break
+
+    grounded_signals = []
+    for summary in memory.get("skill_summary", []) if isinstance(memory.get("skill_summary"), list) else []:
+        if not isinstance(summary, dict) or summary.get("trend") == "insufficient_data":
+            continue
+        skill_id = str(summary.get("skill_id", "")).strip()
+        if not skill_id:
+            continue
+        explanation = _model_explanation_for([skill_id], raw.get("growth_signals"), "interpretation")
+        grounded_signals.append({
+            "title": "%s · %s" % (skill_id, str(summary.get("trend", "stable"))),
+            "evidence": _memory_source_evidence(summary.get("sources")),
+            "interpretation": explanation or "这是基于可比性标记和已记录分数的确定性统计，不代表录用判断。",
+        })
+        if len(grounded_signals) >= 4:
+            break
+
+    grounded_actions = []
+    for action in memory.get("open_actions", []) if isinstance(memory.get("open_actions"), list) else []:
+        if not isinstance(action, dict):
+            continue
+        criteria = action.get("success_criteria") if isinstance(action.get("success_criteria"), list) else []
+        grounded_actions.append({
+            "action": str(action.get("action", "")).strip()[:500],
+            "why_now": str(action.get("reason", "")).strip()[:700],
+            "success_criterion": "；".join(str(value).strip()[:300] for value in criteria if str(value).strip())[:900] or "在下一场面试中完成一次可核对验证。",
+            "source": str(action.get("from", "未命名面试")).strip()[:240] or "未命名面试",
+        })
+        if len(grounded_actions) >= 4:
+            break
+
+    if not grounded_actions:
+        grounded_actions = [
+            {
+                "action": "针对重复缺口完成一次训练",
+                "why_now": "当前长期记忆没有开放行动项，先从最高频缺口开始建立可验证训练记录。",
+                "success_criterion": "完成训练回答，并在下一场面试后记录结果。",
+            }
+        ] if grounded_patterns else []
+
+    comparability = str(memory.get("comparability", "no_data")).strip() or "no_data"
+    if comparability != "comparable":
+        comparability_notice = "当前评分可比性为 %s，跨模型或历史未知评分的趋势仅供参考，不应直接比较。" % comparability
+        for signal in grounded_signals:
+            signal["interpretation"] = (comparability_notice + " " + signal.get("interpretation", "")).strip()[:1000]
+    report["growth_signals"] = grounded_signals
+    report["recurring_patterns"] = grounded_patterns
+    report["priority_training"] = grounded_actions
+    report["next_interview_focus"] = [
+        item["action"] for item in grounded_actions if item.get("action")
+    ][:4] or [str(item.get("skill", "")).strip() for item in grounded_patterns if str(item.get("skill", "")).strip()][:4]
+    report["report_grounding"] = {
+        "grounded": True,
+        "memory_version": str(memory.get("memory_version", ""))[:40],
+        "algorithm_version": str((memory.get("audit") or {}).get("algorithm_version", "deterministic"))[:80],
+        "source_interview_count": int((memory.get("audit") or {}).get("input_count", memory.get("reviewed_interviews", 0)) or 0),
+        "comparability": comparability,
+        "mixed_scoring": bool(memory.get("mixed_scoring")),
+        "pattern_count": len(grounded_patterns),
+        "action_count": len(grounded_actions),
+        "note": "结构化趋势、次数、来源和训练行动由确定性长期记忆提供；模型只提供解释性文字。",
+    }
+    boundary = "确定性边界：本报告的趋势、次数、来源和训练行动来自长期记忆聚合，不由模型新增。"
+    if comparability != "comparable":
+        boundary += " 当前评分可比性为 %s，趋势仅供参考。" % comparability
+    report["data_quality"] = (report["data_quality"] + " " + boundary).strip()[:1500]
+    return report
 
 
 def _as_count(value: Any) -> int:
@@ -686,8 +945,14 @@ def _as_count(value: Any) -> int:
 
 
 def _research_prompt_sources(sources: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    return [
-        {
+    result = []
+    for item in sources[:6]:
+        status = str(item.get("status", "candidate")).strip().lower()
+        has_source_identity = bool(str(item.get("id", "") or item.get("research_id", "")).strip())
+        # AI pre-review is useful for follow-up question leads only. It must
+        # never become factual context without explicit human confirmation.
+        citation_allowed = status == "approved" and has_source_identity and item.get("citation_allowed") is not False
+        result.append({
             "title": item.get("title", ""),
             "platform": item.get("platform", ""),
             "company": item.get("company", ""),
@@ -698,16 +963,27 @@ def _research_prompt_sources(sources: List[Dict[str, Any]]) -> List[Dict[str, An
             "search_query": item.get("search_query", ""),
             "provenance_status": item.get("provenance_status", ""),
             "source_kind": item.get("source_kind", ""),
+            "status": status,
+            "citation_allowed": citation_allowed,
+            "source_role": "approved_context" if citation_allowed else "question_lead_only",
             "claims": (item.get("assessment") or {}).get("claims", []),
             "summary": (item.get("assessment") or {}).get("summary", ""),
-        }
-        for item in sources[:6]
-    ]
+            # Question leads are derived from the public excerpt and are only
+            # permitted to shape follow-up prompts, never interview evidence.
+            "question_leads": (item.get("assessment") or {}).get("question_leads", [])[:4],
+        })
+    return result
 
 
 def _clip_memory(memory: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "reviewed_interviews": memory.get("reviewed_interviews", 0),
+        "memory_version": memory.get("memory_version", "1.0"),
+        "comparability": memory.get("comparability", "no_data"),
+        "mixed_scoring": bool(memory.get("mixed_scoring")),
+        "scoring_providers": (memory.get("scoring_providers") or [])[:6],
+        "scoring_models": (memory.get("scoring_models") or [])[:6],
+        "outcome_signal": memory.get("outcome_signal") or {},
         "recurring_gaps": (memory.get("recurring_gaps") or [])[:6],
         "skill_summary": (memory.get("skill_summary") or [])[:6],
         "open_actions": (memory.get("open_actions") or [])[:6],

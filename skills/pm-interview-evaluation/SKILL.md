@@ -14,17 +14,19 @@ Use this workflow to keep retrieval relevance, source credibility, and candidate
 3. Load `references/diagnosis-schema.md` before emitting or migrating review JSON.
 4. State the information need: target company, role, interview round, topic, and the decision the result should support.
 5. Screen search snapshots for relevance only. Do not mark a result usable from a title or search summary.
-6. For Xiaohongshu, load `references/xiaohongshu-search.md`: public discovery only, no login, cookies, private content, or automated post crawling. Auto-fill candidate metadata, never fabricate the original excerpt.
-7. Require the original post excerpt before judging credibility. Keep the URL, platform, provenance status, and publication date with the excerpt.
+6. For Xiaohongshu, load `references/xiaohongshu-search.md`: public discovery plus bounded public HTML fetch, with no login, cookies, private content, or private API. Auto-fill candidate metadata and visible text when available, never fabricate the original excerpt.
+7. Run the evidence gate on a fetched or manually supplied excerpt. Keep the URL, platform, provenance status, fetch status, and publication date with the excerpt; auto-fetched text is still unverified for authenticity.
 8. For interview notes, quote evidence verbatim before making a diagnosis. If no quote supports a claim, mark it unverified or omit it.
-9. Score only applicable PM skills with deterministic weighted subdimensions. Explain the anchor match, gap, and training acceptance criteria.
-10. Treat scores as coaching signals, not hiring truth. Do not infer personality, intent, or hiring outcome from sparse notes.
+9. Emit all six PM skills in catalog order. Score only applicable V2 subdimensions with deterministic weights; mark uncovered skills/dimensions as missing and do not trust an unweighted model total. Explain the anchor match, gap, and training acceptance criteria.
+10. Preserve `scored_by` after the model call: actual provider, model, prompt version, rubric version, and timestamp. Do not alter scores based on provider metadata.
+11. Treat scores as coaching signals, not hiring truth. `outcome` is optional self-reported training feedback; do not infer causality, personality, intent, or hiring probability.
+12. If the user enables redaction, replace only the explicitly entered company name before external model processing and label the result as best-effort redaction; never claim full anonymization.
 
 ## Resource Matrix
 
 | Task | Read | Output boundary |
 | --- | --- | --- |
-| PM scoring | `pm-rubric.md`, `evidence-policy.md` | Six skills, four dimensions each, evidence-backed 1–5 score |
+| PM scoring | `pm-rubric.md`, `evidence-policy.md` | Six skills, four dimensions each, fixed-weight score or explicit missing state |
 | JSON compatibility | `diagnosis-schema.md` | Preserve legacy fields; normalize new fields server-side |
 | JD + question preparation | `diagnosis-schema.md`, `follow-up-strategy.md` | Use JD decomposition and public leads to prioritize questions; keep leads out of interview evidence |
 | Follow-up practice | `follow-up-strategy.md` | One gap, one prompt, observable success criteria |
@@ -58,3 +60,5 @@ Use fewer items when the transcript is sparse. Never invent an interviewer quest
 ## Failure Handling
 
 An empty search result must report the platform, query directions, failure or sparsity reason, and the next manual search suggestion. An incomplete transcript must lower evidence coverage and confidence; it must not be padded with default evidence. A malformed model response is rejected or normalized to the compatibility schema rather than shown as trusted output.
+
+Before a user actively starts review, search, transcription, or file parsing, the product documentation must make clear which data stays local and which necessary fields are sent to the configured model or search provider. This is an explanation boundary, not a claim of complete anonymization.

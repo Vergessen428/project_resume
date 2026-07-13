@@ -58,6 +58,11 @@ def build_model():
             required_key_name="CUSTOM_MODEL_API_KEY",
         )
 
+    for provider_name, client in providers.items():
+        # Single-provider clients do not have FailoverModelClient.active_provider.
+        # Keep the same factual metadata contract for both paths.
+        client.provider_name = provider_name
+
     default_order = "gemini,openai,deepseek,openrouter,custom"
     order = [item.strip().lower() for item in os.environ.get("MODEL_FALLBACK_ORDER", default_order).split(",") if item.strip()]
     selected = [(name, providers[name]) for name in order if name in providers]

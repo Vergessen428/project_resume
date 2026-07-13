@@ -1,0 +1,44 @@
+[
+  {
+    "id": "sparse_transcript",
+    "transcript": "只说了项目名称。",
+    "review": {
+      "summary": "信息不足",
+      "skill_diagnosis": [{"skill_id": "metrics_experiment", "score": 5, "evidence": "模型自己补的结果"}]
+    }
+  },
+  {
+    "id": "fabricated_evidence",
+    "transcript": "我把需求拆成两期。",
+    "review": {
+      "summary": "有取舍",
+      "gaps": [{"title": "指标缺口", "canonical_gap_id": "metrics_experiment__definition", "evidence": "上线后转化率提升 30%"}]
+    }
+  },
+  {
+    "id": "illegal_skill_and_gap_ids",
+    "transcript": "我负责推进项目。",
+    "review": {
+      "summary": "边界测试",
+      "skill_diagnosis": [{"skill_id": "made_up_skill", "score": 99}],
+      "gaps": [{"title": "未知缺口", "canonical_gap_id": "made_up_gap"}]
+    }
+  },
+  {
+    "id": "contradictory_metric",
+    "transcript": "DAU 上升，但报名率没有变化。",
+    "review": {
+      "summary": "应保留矛盾",
+      "skill_diagnosis": [{"skill_id": "metrics_experiment", "score": 4, "dimensions": [{"id": "attribution", "score": 1, "status": "contradicted", "evidence": "DAU 上升，但报名率没有变化。"}]}]
+    }
+  },
+  {
+    "id": "old_schema",
+    "transcript": "我先做了用户访谈。",
+    "review": {
+      "schema_version": "2.0",
+      "summary": "旧格式",
+      "skill_diagnosis": [{"skill_id": "product_sense", "score": 3, "next_practice": "补充用户问题"}]
+    }
+  }
+]

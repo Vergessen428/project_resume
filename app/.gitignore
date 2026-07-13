@@ -5,4 +5,9 @@ __pycache__/
 # Local candidate data must never be committed.
 data/*.json
 data/*.json.tmp
+data/*.jsonl
+data/*.jsonl.*
 data/*.audio
+data/temporary_uploads/*
+data/backups/*.json
+data/backups/*.json.tmp

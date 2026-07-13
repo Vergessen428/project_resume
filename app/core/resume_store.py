@@ -8,6 +8,8 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
+from .local_store import read_json_value
+
 
 class ResumeStore:
     def __init__(self, path: str) -> None:
@@ -50,6 +52,21 @@ class ResumeStore:
                 return copy.deepcopy(record)
         return None
 
+    def delete(self, resume_id: str) -> bool:
+        with self._lock:
+            records = self._read_all()
+            kept = [record for record in records if record.get("id") != resume_id]
+            if len(kept) == len(records):
+                return False
+            self._write_all(kept)
+            return True
+
+    def replace_all(self, records: List[Dict[str, Any]]) -> None:
+        if not isinstance(records, list) or not all(isinstance(record, dict) for record in records):
+            raise ValueError("简历备份结构无效。")
+        with self._lock:
+            self._write_all(copy.deepcopy(records))
+
     def _normalise(self, payload: Dict[str, Any]) -> Dict[str, str]:
         return {
             "name": str(payload.get("name", "")).strip()[:120],
@@ -66,14 +83,7 @@ class ResumeStore:
         }
 
     def _read_all(self) -> List[Dict[str, Any]]:
-        if not os.path.isfile(self.path):
-            return []
-        try:
-            with open(self.path, "r", encoding="utf-8") as handle:
-                data = json.load(handle)
-            return data if isinstance(data, list) else []
-        except (OSError, json.JSONDecodeError):
-            return []
+        return read_json_value(self.path, [], list, "简历")
 
     def _write_all(self, records: List[Dict[str, Any]]) -> None:
         temporary_path = self.path + ".tmp"
