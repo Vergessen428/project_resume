@@ -24,14 +24,14 @@ python3 -B -m unittest discover -s tests -p 'test_*.py'
 命令验收覆盖静态入口、同源 CSS/JS、404、演示数据和前端契约；它不能模拟浏览器点击，也不能证明真实搜索已经联网。
 
 GitHub Actions 已配置独立的 `browser-smoke` job：固定 Node 20、Playwright 1.52.0 和 Chromium，运行
-`scripts/browser_demo_smoke.mjs`，覆盖复盘、公开小红书候选、Agent 轨迹、JD 到速记问题、只读写操作和移动端溢出，并上传桌面/移动截图。首次 CI 运行通过前，这条验收仍不能视为完成。
+`scripts/browser_demo_smoke.mjs`，覆盖复盘、公开小红书候选、Agent 轨迹、JD 到速记问题、只读写操作和移动端溢出，并上传桌面/移动截图。[首次绿色运行记录](https://github.com/Vergessen428/project_resume/actions/runs/29282001860)已通过。
 
 ## 当前限制
 
 - 静态 Demo 的 JD 解析、搜索、Agent、成长报告和写操作均是 `demo_only` 预置响应。
 - 只有动态后端的 `/api/research/agent` 才会按 JD 生成查询、读取白名单公开 HTML、持久化候选并记录任务状态。
 - 小红书公开页能被读取，不等于原帖身份、发布时间、正文真实性已经确认；`approved` 仍需要人工确认。
-- 浏览器 CI 已配置但尚未在当前工作树中取得一次绿色运行记录；本机检查不能替代 CI 结果。
+- 浏览器 CI 已取得绿色运行记录；后续页面主路径变更仍需保持该 job 通过，本机检查不能替代 CI 结果。
 
 ## 进入真实可用阶段的补充条件
 

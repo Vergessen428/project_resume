@@ -103,7 +103,7 @@
 但 Goal 仍未完成。下一轮的退出条件不是“页面看起来更完整”，而是：
 
 - 扩展真实脱敏 query-document 标注，并把搜索宏平均指标设为可追踪的版本化基线；
-- 静态资源 HTTP smoke 已进入 GitHub Actions；独立的 `browser-smoke` job 已固定 Node 20、Playwright 1.52.0 和 Chromium，覆盖复盘、XHS 候选、Agent 轨迹、JD 到速记问题、只读写操作和移动端溢出，并上传截图；仍需取得首次绿色 CI 记录；
+- 静态资源 HTTP smoke 已进入 GitHub Actions；独立的 `browser-smoke` job 已固定 Node 20、Playwright 1.52.0 和 Chromium，覆盖复盘、XHS 候选、Agent 轨迹、JD 到速记问题、只读写操作和移动端溢出，并上传截图；首次绿色 CI 记录已取得，后续页面主路径变更继续以该 job 作为门槛；
 - 完成一次备份损坏、恢复失败、任务超时和取消的真实演练；标准脚本已加入 CI，仍需在后续版本继续增加磁盘空间不足和进程中断场景；
 - 明确 Render 公网后端的账号隔离、持久化、密钥、任务和日志方案，或者继续把它限制为个人实验实例；
 - 对自动读取的小红书正文保留“可用候选”与“真实性已确认”的双状态，不把 AI 预审文案当作原帖事实。
