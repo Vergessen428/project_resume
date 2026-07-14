@@ -1,64 +1,64 @@
 ---
 name: pm-interview-evaluation
-description: Apply evidence-grounded standards to product-manager interview notes and public interview-research results. Use when reviewing PM answers, defining search relevance, assigning coaching scores, or designing follow-up practice. Do not use for hiring decisions, personality inference, or private-platform crawling.
+description: 面向中文产品经理面试复盘与公开面经研究的证据型评估 Skill。适用于评估 PM 回答、定义搜索相关性、生成训练分和设计追问练习。不用于招聘决策、人格推断或私密平台爬取。
 ---
 
-# PM Interview Evaluation
+# PM 面试评估 Skill
 
-Use this workflow to keep retrieval relevance, source credibility, and candidate coaching separate. Load only the references required by the task.
+这套流程用于把搜索相关性、资料可信度和候选人训练诊断分开处理。根据任务只加载必要的参考资料，避免把不同类型的判断混在一起。
 
-## Workflow
+## 主流程
 
-1. Load `references/pm-rubric.md` for skill IDs, dimensions, weights, and anchors.
-2. Load `references/evidence-policy.md` before quoting, resolving contradictions, or handling sparse notes.
-3. Load `references/diagnosis-schema.md` before emitting or migrating review JSON.
-4. State the information need: target company, role, interview round, topic, and the decision the result should support.
-5. Screen search snapshots for relevance only. Do not mark a result usable from a title or search summary.
-6. For Xiaohongshu, load `references/xiaohongshu-search.md`: public discovery plus bounded public HTML fetch, with no login, cookies, private content, or private API. Auto-fill candidate metadata and visible text when available, never fabricate the original excerpt.
-7. Run the evidence gate on a fetched or manually supplied excerpt. Keep the URL, platform, provenance status, fetch status, and publication date with the excerpt; auto-fetched text is still unverified for authenticity.
-8. For interview notes, quote evidence verbatim before making a diagnosis. If no quote supports a claim, mark it unverified or omit it.
-9. Emit all six PM skills in catalog order. Score only applicable V2 subdimensions with deterministic weights; mark uncovered skills/dimensions as missing and do not trust an unweighted model total. Explain the anchor match, gap, and training acceptance criteria.
-10. Preserve `scored_by` after the model call: actual provider, model, prompt version, rubric version, and timestamp. Do not alter scores based on provider metadata.
-11. Treat scores as coaching signals, not hiring truth. `outcome` is optional self-reported training feedback; do not infer causality, personality, intent, or hiring probability.
-12. If the user enables redaction, replace only the explicitly entered company name before external model processing and label the result as best-effort redaction; never claim full anonymization.
+1. 读取 `references/pm-rubric.md`，确认能力 ID、子维度、权重和评分锚点。
+2. 在引用证据、处理矛盾或面对稀疏记录前，读取 `references/evidence-policy.md`。
+3. 输出或迁移复盘 JSON 前，读取 `references/diagnosis-schema.md`。
+4. 先说明信息需求：目标公司、岗位、面试轮次、主题，以及结果要支持的决定。
+5. 搜索快照只做相关性初筛。不能因为标题或搜索摘要看起来相关，就把资料标记为可引用。
+6. 涉及小红书时读取 `references/xiaohongshu-search.md`：使用公开发现和有边界的公开 HTML 读取，不登录、不读取 Cookie、不访问私密内容或私有 API。页面可读时自动补充候选元数据和可见文本，但绝不编造原帖摘录。
+7. 对自动读取或人工提供的摘录执行证据门禁。保留 URL、平台、来源状态、读取状态和发布日期；自动读取的文字仍未完成真实性确认。
+8. 复盘面试记录时，先引用逐字证据再下诊断。如果没有原文支持，将结论标为 `unverified` 或省略。
+9. 按目录顺序输出六项 PM 能力。只对适用的 V2 子维度按固定权重评分；未覆盖的能力或子维度标记为 `missing`，不要相信模型未经加权计算的总分。说明评分锚点、能力缺口和训练验收标准。
+10. 模型调用完成后保留 `scored_by`：实际 provider、model、Prompt 版本、rubric 版本和时间。不能根据模型身份调整分数。
+11. 将分数视为训练信号，不视为招聘结论。`outcome` 只是可选的用户自报训练反馈，不能据此推断因果、人格、意图或录用概率。
+12. 用户开启脱敏时，只替换用户明确填写的公司名，并标记为“尽力而为的替换”；不能声称完成了完整匿名化。
 
-## Resource Matrix
+## 资源读取矩阵
 
-| Task | Read | Output boundary |
+| 任务 | 读取资料 | 输出边界 |
 | --- | --- | --- |
-| PM scoring | `pm-rubric.md`, `evidence-policy.md` | Six skills, four dimensions each, fixed-weight score or explicit missing state |
-| JSON compatibility | `diagnosis-schema.md` | Preserve legacy fields; normalize new fields server-side |
-| JD + question preparation | `diagnosis-schema.md`, `follow-up-strategy.md` | Use JD decomposition and public leads to prioritize questions; keep leads out of interview evidence |
-| Follow-up practice | `follow-up-strategy.md` | One gap, one prompt, observable success criteria |
-| Xiaohongshu search | `xiaohongshu-search.md` | Candidate discovery with query trace and manual-check status |
+| PM 评分 | `pm-rubric.md`、`evidence-policy.md` | 六项能力、每项四个子维度、固定权重分数或明确的缺失状态 |
+| JSON 兼容 | `diagnosis-schema.md` | 保留旧字段，由后端统一归一化新增字段 |
+| JD 与问题准备 | `diagnosis-schema.md`、`follow-up-strategy.md` | 使用 JD 拆解和公开线索排列问题优先级；线索不能进入面试证据 |
+| 追问训练 | `follow-up-strategy.md` | 一个缺口、一道练习题、可观察的成功标准 |
+| 小红书搜索 | `xiaohongshu-search.md` | 带查询轨迹和人工确认状态的候选发现 |
 
-## Relevance Boundary
+## 相关性边界
 
-Calculate snapshot relevance from these fixed dimensions and weights:
+使用以下固定维度和权重计算搜索快照相关度：
 
-- Company match: 30%
-- Role match: 25%
-- Round match: 15%
-- Topic match: 15%
-- Interview specificity: 10%
-- Recency: 5%
+- 公司匹配：30%
+- 岗位匹配：25%
+- 轮次匹配：15%
+- 主题匹配：15%
+- 面试具体性：10%
+- 时效性：5%
 
-The weighted score answers whether the result is worth opening for this information need. It is not a credibility score. Credibility requires the original excerpt and a separate human/AI evidence gate.
+加权分回答的是“这条结果是否值得为当前信息需求打开”。它不是可信度分。可信度必须依赖原帖摘录和独立的人/AI 证据门禁。
 
-## PM Score Boundary
+## PM 评分边界
 
-Use the project rubric: product sense, ownership, metrics and experimentation, execution and collaboration, structured communication, and business context. Anchor scores as follows:
+使用项目评分规则中的六项能力：产品判断、项目主导力、指标与实验、推进与协作、结构化表达、业务与岗位理解。评分锚点如下：
 
-- 1: no demonstrated behavior or clear mismatch
-- 2: relevant point mentioned, but a key definition, action, trade-off, or result is missing
-- 3: basically competent example with one important gap
-- 4: specific and well-reasoned behavior with a small detail gap
-- 5: evidence closes the loop across user/business context, decision, metric, result, and learning
+- 1 分：没有展示相关行为，或回答与问题明显不匹配。
+- 2 分：提到了相关点，但缺少关键定义、动作、取舍或结果。
+- 3 分：案例基本合格，但有一个重要环节没有闭环。
+- 4 分：行为具体且能解释取舍，只有少量细节缺口。
+- 5 分：证据完成闭环，连接了用户/业务、决策、指标、结果和复盘。
 
-Use fewer items when the transcript is sparse. Never invent an interviewer question, a result, a metric, or an external fact.
+转写稀疏时减少结论数量。绝不编造面试官问题、结果、指标或外部事实。
 
-## Failure Handling
+## 失败处理
 
-An empty search result must report the platform, query directions, failure or sparsity reason, and the next manual search suggestion. An incomplete transcript must lower evidence coverage and confidence; it must not be padded with default evidence. A malformed model response is rejected or normalized to the compatibility schema rather than shown as trusted output.
+搜索为空时，必须报告平台、尝试过的查询方向、失败或结果稀疏的原因，以及下一步人工搜索建议。转写不完整时要降低证据覆盖度和置信度，不能用默认证据补齐。模型响应格式错误时，拒绝或归一化为兼容 Schema，不能直接作为可信输出展示。
 
-Before a user actively starts review, search, transcription, or file parsing, the product documentation must make clear which data stays local and which necessary fields are sent to the configured model or search provider. This is an explanation boundary, not a claim of complete anonymization.
+在用户主动开始复盘、搜索、转写或文件解析前，产品文档必须说明哪些数据留在本机、哪些必要字段会发送给配置的模型或搜索服务。这是处理边界说明，不代表完成了完整匿名化。

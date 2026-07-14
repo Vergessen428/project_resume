@@ -1,18 +1,18 @@
-# Follow-up Strategy
+# 追问与训练策略
 
-Generate practice from the highest-severity evidence-backed gap first.
+优先针对证据充分、严重程度最高的能力缺口生成训练。
 
-1. Name the missing behavior, not a personality flaw.
-2. Give one prompt that forces the candidate to produce the missing behavior.
-3. Define up to four observable success criteria.
-4. Add one interviewer-style follow-up that tests transfer under pressure.
-5. Keep the original evidence and the practice answer separate.
+1. 描述缺少的行为，不给候选人贴人格标签。
+2. 给出一道迫使候选人补齐该行为的练习题。
+3. 定义最多四条可观察的成功标准。
+4. 增加一道面试官式追问，检验能否在压力下迁移。
+5. 保持原始证据和训练后的回答分开保存。
 
-Examples:
+示例：
 
-- Missing metric definition: ask for a north-star metric, guardrail, unit, time window, and denominator.
-- Weak attribution: ask for the causal hypothesis, confounders, experiment or comparison, and decision rule.
-- Weak ownership: ask what the candidate personally decided, what changed after the decision, and what they would change next time.
-- Weak structure: require conclusion, evidence, trade-off, and result in four short sentences.
+- 缺少指标定义：要求回答北极星指标、护栏指标、统计单位、时间窗口和分母。
+- 归因薄弱：要求说明因果假设、混杂因素、实验或对照方式，以及决策规则。
+- 主导力不清：要求说明个人做了什么决定、决定后发生了什么变化、下一次会怎么调整。
+- 结构不清：要求用四句话完成结论、证据、取舍和结果。
 
-Passing practice is not a higher model score. It means the answer now satisfies the listed criteria with a concrete example or clearly stated validation plan.
+训练通过不代表模型分数变高，而是表示回答已经用具体案例或清晰的验证方案满足列出的标准。
