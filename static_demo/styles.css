@@ -78,3 +78,5 @@
 .outcome-feedback span { border-radius:4px; padding:3px 6px; background:#fff; color:var(--blue); font-size:11px; font-weight:800; white-space:nowrap; }
 .outcome-feedback p { margin:0; font-size:11px; line-height:1.5; }
 .score-summary-outcome { margin:0; padding-top:6px; border-top:1px solid var(--soft); color:#315d7e; font-size:11px; line-height:1.5; }
+select { font-family:inherit; font-size:13px; font-weight:600; letter-spacing:0; appearance:none; padding-right:32px; background-image:linear-gradient(45deg,transparent 50%,#64747b 50%),linear-gradient(135deg,#64747b 50%,transparent 50%); background-position:calc(100% - 14px) 50%,calc(100% - 9px) 50%; background-size:5px 5px,5px 5px; background-repeat:no-repeat; }
+.data-actions select { font-size:11px; font-weight:600; }

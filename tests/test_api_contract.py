@@ -128,6 +128,14 @@ class ApiContractTests(unittest.TestCase):
         self.assertIn("automatic", body["policy"])
         self.assertFalse(body["policy"]["automatic"])
 
+    def test_demo_interview_route_creates_a_complete_reviewed_record(self):
+        status, body = self.request("POST", "/api/interviews/demo", {})
+        self.assertEqual(status, 201)
+        self.assertTrue(body["ok"])
+        self.assertIn("review", body["interview"])
+        self.assertEqual(body["interview"]["review"]["schema_version"], "2.1")
+        self.assertEqual(body["interview"]["review"]["score_summary"]["coach_score"], 60)
+
     def test_status_and_retention_contracts_require_their_gates(self):
         status, body = self.request("POST", "/api/research/%s/status" % self.source["id"], {"status": "auto_approved"})
         self.assertEqual(status, 400)

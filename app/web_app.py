@@ -803,7 +803,12 @@ class AssistantHandler(BaseHTTPRequestHandler):
             self.send_json({"ok": True, "interview": STORE.create(payload)}, 201)
             return
         if path == "/api/interviews/demo":
-            self.send_json({"ok": True, "interview": STORE.create(sample_interview())}, 201)
+            sample = sample_reviewed_interview()
+            review = sample.pop("review", None)
+            created = STORE.create(sample)
+            if review:
+                created = STORE.save_review(created["id"], review) or created
+            self.send_json({"ok": True, "interview": created}, 201)
             return
         if path == "/api/resumes":
             error = self.validate_resume(payload)
