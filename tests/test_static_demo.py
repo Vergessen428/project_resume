@@ -57,9 +57,15 @@ class StaticDemoSmokeTests(unittest.TestCase):
         self.assertIn("scripts/static_demo_http_smoke.py", workflow)
         self.assertIn("sdk: static", hf_readme)
         self.assertIn("https://huggingface.co/spaces/", root_readme)
-        self.assertIn("## 页面如何协作", root_readme)
-        self.assertIn("flowchart LR", root_readme)
-        self.assertNotIn("![面试工作台]", root_readme)
+        self.assertIn("## 界面预览", root_readme)
+        self.assertIn("flowchart TD", root_readme)
+        for filename in (
+            "01-review-workspace.png",
+            "02-review-output.png",
+            "03-research-library.png",
+            "04-growth-report.png",
+        ):
+            self.assertIn(f"docs/screenshots/{filename}", root_readme)
 
     def test_demo_data_is_separate_and_loaded_before_app(self):
         html = read("static_demo", "index.html")
