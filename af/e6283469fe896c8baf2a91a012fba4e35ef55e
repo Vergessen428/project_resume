@@ -1,0 +1,39 @@
+app/core/interview_review.py
+  s_530c13eb65dd40::t_6146bfb1ff9392 244,247-250,283-300,325,333-357,362-364,366-367,376-384
+app/web/app.js
+  s_530c13eb65dd40::t_75aa38eab61b71 4,93,96-97,238,243
+app/web/index.html
+  s_530c13eb65dd40::t_b1d3dde2c8905d 40,42
+app/web/styles.css
+  s_530c13eb65dd40::t_c5d00cde1cc125 92-99
+static_demo/app.js
+  s_530c13eb65dd40::t_08116a16bfe80a 43,88,91-92,130
+static_demo/demo_data.js
+  s_530c13eb65dd40::t_e83a60855b0a3a 240-243
+static_demo/index.html
+  s_530c13eb65dd40::t_e6c6b14c2a432f 40,42
+static_demo/styles.css
+  s_530c13eb65dd40::t_5cc38d12473d42 83-90
+tests/test_core.py
+  s_530c13eb65dd40::t_077d9e03056aeb 1174-1189
+tests/test_static_demo.py
+  s_530c13eb65dd40::t_1ecd2445d28bc2 91,97-103
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "afe6283469fe896c8baf2a91a012fba4e35ef55e",
+  "prompts": {},
+  "sessions": {
+    "s_530c13eb65dd40": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5117-aef6-7ed3-9420-0cf41c972c31",
+        "model": "unknown"
+      },
+      "human_author": "Vergessen428 <Vergessen428@users.noreply.github.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
