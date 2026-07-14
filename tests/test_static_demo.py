@@ -58,7 +58,9 @@ class StaticDemoSmokeTests(unittest.TestCase):
         self.assertIn("sdk: static", hf_readme)
         self.assertIn("https://huggingface.co/spaces/", root_readme)
         self.assertIn("## 界面预览", root_readme)
-        self.assertIn("flowchart TD", root_readme)
+        self.assertIn("岗位 JD / 简历 / 公开面经", root_readme)
+        self.assertIn("下面四张图对应一次完整的使用路径", root_readme)
+        self.assertNotIn("flowchart TD", root_readme)
         for filename in (
             "01-review-workspace.png",
             "02-review-output.png",
