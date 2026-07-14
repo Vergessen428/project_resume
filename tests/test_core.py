@@ -1171,6 +1171,22 @@ class NoteQuestionsTests(unittest.TestCase):
         ids = [q["id"] for q in result["questions"]]
         self.assertEqual(ids, ["common_1", "common_2"])
 
+    def test_jd_only_fallback_is_skill_targeted(self):
+        result = generate_note_questions(
+            self._FailModel(),
+            "负责指标设计、实验验证和跨团队推进。",
+            "",
+            [],
+            {"interview_focus": ["指标与归因"], "search_topics": ["项目深挖"]},
+        )
+        dynamic = [item for item in result["questions"] if item["id"].startswith(("hit_", "gap_"))]
+        self.assertEqual(len(dynamic), 4)
+        self.assertEqual(
+            {item["skill_id"] for item in dynamic},
+            {"story_ownership", "product_sense", "metrics_experiment", "execution_collaboration"},
+        )
+        self.assertTrue(any("指标" in item["question"] for item in dynamic))
+
     def test_normalises_whitelist_and_forces_common(self):
         raw = {
             "questions": [
