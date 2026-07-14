@@ -80,4 +80,10 @@
 .task-status-dot { width:7px; height:7px; flex:0 0 auto; border-radius:50%; background:var(--amber); }
 .task-status.cancelled,.task-status.failed { border-color:#e5b4ad; background:var(--red-soft); color:#84251c; }
 .task-status.succeeded { border-color:#bcdcd6; background:var(--teal-soft); color:var(--teal-dark); }
+.outcome-feedback { display:grid; gap:4px; margin-top:12px; padding:10px 12px; border-left:3px solid var(--blue); background:var(--blue-soft); color:#315d7e; }
+.outcome-feedback>div { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.outcome-feedback strong { font-size:12px; }
+.outcome-feedback span { border-radius:4px; padding:3px 6px; background:#fff; color:var(--blue); font-size:11px; font-weight:800; white-space:nowrap; }
+.outcome-feedback p { margin:0; font-size:11px; line-height:1.5; }
+.score-summary-outcome { margin:0; padding-top:6px; border-top:1px solid var(--soft); color:#315d7e; font-size:11px; line-height:1.5; }
 @media (max-width:720px) { .topbar-actions { width:100%; align-items:flex-end; flex-direction:column; gap:5px; } .task-status { max-width:100%; } }

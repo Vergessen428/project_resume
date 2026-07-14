@@ -89,6 +89,9 @@ class StaticDemoSmokeTests(unittest.TestCase):
         self.assertIn("出题线索", app)
         self.assertIn("outcome.interpretation", app)
         self.assertIn("结果为自报训练反馈，不是招聘预测", read("static_demo", "app.js"))
+        self.assertIn('id="outcome-feedback"', read("static_demo", "index.html"))
+        self.assertIn("面试结果（自报，可选）", read("static_demo", "index.html"))
+        self.assertIn("renderOutcomeFeedback", app)
 
     def test_dynamic_jd_flow_passes_analysis_and_auto_ingests_sources(self):
         app = read("app", "web", "app.js")
@@ -188,6 +191,11 @@ class StaticDemoSmokeTests(unittest.TestCase):
         self.assertIn("note-research-meta", read("static_demo", "styles.css"))
         self.assertIn("provenance-badge", read("app", "web", "styles.css"))
         self.assertIn("provenance-badge", css)
+        self.assertIn("outcome-feedback", read("app", "web", "styles.css"))
+        self.assertIn("outcome-feedback", css)
+        self.assertIn("score-summary-outcome", read("app", "web", "app.js"))
+        self.assertIn("score-summary-outcome", read("static_demo", "app.js"))
+        self.assertIn("renderOutcomeFeedback", read("app", "web", "app.js"))
         self.assertIn("question_leads", read("app", "web", "app.js"))
         self.assertIn("training_progress", read("static_demo", "app.js"))
         self.assertIn("下一场验证", read("app", "web", "app.js"))
