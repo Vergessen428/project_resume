@@ -1,0 +1,23 @@
+README.md
+  s_530c13eb65dd40::t_68e7bd714a754f 143-157,159-164,166
+tests/test_static_demo.py
+  s_530c13eb65dd40::t_b7fb86db3cc1a5 60-62
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "fb3db5454e9f27b8ce1431de71c7ade11ecf5b82",
+  "prompts": {},
+  "sessions": {
+    "s_530c13eb65dd40": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5117-aef6-7ed3-9420-0cf41c972c31",
+        "model": "unknown"
+      },
+      "human_author": "Vergessen428 <Vergessen428@users.noreply.github.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
