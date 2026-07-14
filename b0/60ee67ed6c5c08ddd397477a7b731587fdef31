@@ -1,0 +1,39 @@
+README.md
+  s_530c13eb65dd40::t_285b721c319833 159,162-167
+app/README.md
+  s_530c13eb65dd40::t_3c0028b18536bd 15-16
+app/web/app.js
+  s_530c13eb65dd40::t_60a0c79516c9ed 84-85,93,96,107,114,325
+app/web/index.html
+  s_530c13eb65dd40::t_4892c937e57afa 34-35
+app/web/styles.css
+  s_530c13eb65dd40::t_39e475916431c5 83-88
+static_demo/README.md
+  s_530c13eb65dd40::t_bdea0c96cb37e3 17
+static_demo/app.js
+  s_530c13eb65dd40::t_2fb90df11f5ba3 79-80,88,91,99,166
+static_demo/index.html
+  s_530c13eb65dd40::t_e79211f7095ccd 34-35
+static_demo/styles.css
+  s_530c13eb65dd40::t_1f9e9029bf942c 75-80
+tests/test_static_demo.py
+  s_530c13eb65dd40::t_9db3941bc804ed 92-94,194-198
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "b060ee67ed6c5c08ddd397477a7b731587fdef31",
+  "prompts": {},
+  "sessions": {
+    "s_530c13eb65dd40": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5117-aef6-7ed3-9420-0cf41c972c31",
+        "model": "unknown"
+      },
+      "human_author": "Vergessen428 <Vergessen428@users.noreply.github.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
