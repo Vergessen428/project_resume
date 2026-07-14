@@ -237,10 +237,10 @@ window.AUTUMN_DEMO_DATA = (() => {
   ];
 
   const noteQuestions = [
-    { id: "hit_1", type: "命中", question: "面试官追问校园活动小程序的指标时，你是怎么定义“成功”的？口径讲清了吗？", why_asked: "简历核心项目 × JD 指标设计要求" },
-    { id: "hit_2", type: "命中", question: "被问到需求取舍（活动入口 vs 报名提醒）时，你的决策依据是什么？", why_asked: "命中 JD 的问题拆解与推进能力" },
-    { id: "gap_1", type: "补刀", question: "JD 强调数据验证方案，你有没有被问到 A/B 实验或归因？答得如何？", why_asked: "JD 要求但简历未体现的实验能力" },
-    { id: "gap_2", type: "补刀", question: "跨团队推进闭环这块，面试官有没有追问你如何对齐目标、收敛分歧？", why_asked: "JD 要求跨团队推进，简历偏弱" },
+    { id: "hit_1", type: "命中", skill_id: "metrics_experiment", question: "面试官追问校园活动小程序的指标时，你是怎么定义“成功”的？口径讲清了吗？", why_asked: "简历核心项目 × JD 指标设计要求" },
+    { id: "hit_2", type: "命中", skill_id: "story_ownership", question: "被问到需求取舍（活动入口 vs 报名提醒）时，你的决策依据是什么？", why_asked: "命中 JD 的问题拆解与推进能力" },
+    { id: "gap_1", type: "补刀", skill_id: "metrics_experiment", question: "JD 强调数据验证方案，你有没有被问到 A/B 实验或归因？答得如何？", why_asked: "JD 要求但简历未体现的实验能力" },
+    { id: "gap_2", type: "补刀", skill_id: "execution_collaboration", question: "跨团队推进闭环这块，面试官有没有追问你如何对齐目标、收敛分歧？", why_asked: "JD 要求跨团队推进，简历偏弱" },
     { id: "common_1", type: "通用", question: "这场面试里，哪个问题你答得最卡？当时你是怎么回应的？", why_asked: "定位当场最大失分点" },
     { id: "common_2", type: "通用", question: "面完你最后悔哪句话没说出来，或哪个点没讲清？", why_asked: "捕捉遗漏，供下场改进" },
   ];

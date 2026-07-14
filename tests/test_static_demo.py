@@ -88,10 +88,18 @@ class StaticDemoSmokeTests(unittest.TestCase):
         self.assertIn("question_leads", read("static_demo", "demo_data.js"))
         self.assertIn("出题线索", app)
         self.assertIn("outcome.interpretation", app)
+
         self.assertIn("结果为自报训练反馈，不是招聘预测", read("static_demo", "app.js"))
         self.assertIn('id="outcome-feedback"', read("static_demo", "index.html"))
         self.assertIn("面试结果（自报，可选）", read("static_demo", "index.html"))
         self.assertIn("renderOutcomeFeedback", app)
+
+    def test_review_input_is_single_transcript_surface_and_no_redaction_toggle(self):
+        for folder in ("app", "static_demo"):
+            html = read(folder, "web", "index.html") if folder == "app" else read(folder, "index.html")
+            self.assertIn("可直接补充复盘", html)
+            self.assertNotIn('id="redact-company"', html)
+            self.assertNotIn('name="personal_notes"', html)
 
     def test_dynamic_jd_flow_passes_analysis_and_auto_ingests_sources(self):
         app = read("app", "web", "app.js")
