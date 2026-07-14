@@ -1,0 +1,37 @@
+README.md
+  s_530c13eb65dd40::t_838c719a0b964e 252-253
+skills/pm-interview-evaluation/SKILL.md
+  s_530c13eb65dd40::t_0d2977ba4bbd00 3,6,8,10,12-23,25,27,29-33,35,37,39-44,46,48,50,52-56,58,60,62,64
+skills/pm-interview-evaluation/SPEC.md
+  s_530c13eb65dd40::t_d3670e2f2cd57a 1,3,5,7,9,11,13-15,17,19,21,23,25,27,29-33
+skills/pm-interview-evaluation/agents/openai.yaml
+  s_530c13eb65dd40::t_8dfc8c7309d91f 2-4
+skills/pm-interview-evaluation/references/diagnosis-schema.md
+  s_530c13eb65dd40::t_cbe2119d201bd8 1,3,23-24,53-54,56,58,60,62,64,66
+skills/pm-interview-evaluation/references/evidence-policy.md
+  s_530c13eb65dd40::t_e8009731a80695 1,3,5,7,9,11,13,15,17,19
+skills/pm-interview-evaluation/references/follow-up-strategy.md
+  s_530c13eb65dd40::t_eaf32cad0644db 1,3,5-9,11,13-16,18
+skills/pm-interview-evaluation/references/pm-rubric.md
+  s_530c13eb65dd40::t_796245b3f7e1ed 1,3,5-12,14,16-20,22
+skills/pm-interview-evaluation/references/xiaohongshu-search.md
+  s_530c13eb65dd40::t_57b77ecde5c934 1,3,5-11,13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "414241267a2a5269be55ee107a7ace73b4bb4fe7",
+  "prompts": {},
+  "sessions": {
+    "s_530c13eb65dd40": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5117-aef6-7ed3-9420-0cf41c972c31",
+        "model": "unknown"
+      },
+      "human_author": "Vergessen428 <Vergessen428@users.noreply.github.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
