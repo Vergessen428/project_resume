@@ -19,6 +19,8 @@ Space；如果 Render 当前不可用，不影响静态展示。
 3. 创建时填两个环境变量（`sync: false`，不入 Git）：
    - `GEMINI_API_KEY`：你的 Gemini key（建议用吊销重建后的新 key）
    - `APP_ACCESS_TOKEN`：一个只有你知道的管理口令。访客不需要它就能看，只有你要写入/生成时才用。
+
+`render.yaml` 会绑定 `0.0.0.0`。非 Demo 模式若缺少 `APP_ACCESS_TOKEN`，服务会直接拒绝启动；这是故意的 fail-closed 保护，不要通过删除口令变量来绕过。
 4. 创建服务，等构建完成，得到 `https://autumn-pm-coach-xxxx.onrender.com`。
 5. 把这个网址直接发给面试官——**打开即用，无需登录，能看到完整复盘示例**。
 
@@ -75,5 +77,9 @@ services:
 ## 说明
 
 - `/healthz` 公开且不含任何数据；`/api/*` 的读写权限由 `APP_ACCESS_TOKEN` 和 `APP_DEMO_MODE`
-  共同决定（详见 `docs/PROJECT_OVERVIEW.md` 安全模型一节）。
+  共同决定（详见 `docs/design/PROJECT_OVERVIEW.md` 安全模型一节）。
 - 口令校验有 per-IP 限流：连续失败 5 次锁定 60 秒。
+- `/api/*` 另有默认每来源 IP 每分钟 120 次的请求限流，可用 `APP_RATE_LIMIT_PER_MINUTE`
+  调整；`/healthz` 不计入。该限流保存在单进程内，不能替代多实例网关、正式用户隔离或 WAF。
+- 如果恢复回滚失败，`/healthz` 会返回 503，并要求先处理本地恢复标记；Render 仍只适合
+  受口令保护的个人单实例实验，不应承载未隔离的多用户数据。

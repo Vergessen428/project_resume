@@ -1,27 +1,33 @@
-# PM Interview Evaluation Skill Specification
+# PM 面试评估 Skill 规格说明
 
-## Scope
+## 范围
 
-This skill evaluates PM interview notes for training. It does not simulate a live interview, predict hiring outcomes, or decide whether a public post is authentic.
+本 Skill 用于面试训练复盘，不进行实时面试模拟，不预测招聘结果，也不判断公开帖子是否真实。
 
-## Evidence Model
+## 证据模型
 
-Every diagnostic claim has one of five statuses: `observed`, `missing`, `contradicted`, `not_applicable`, or `unverified`. `observed` and `contradicted` require a short verbatim transcript quote. Missing evidence is explicit and lowers confidence.
+每条诊断结论都必须有以下五种状态之一：`observed`（已观察）、`missing`（缺失）、`contradicted`（存在矛盾）、`not_applicable`（不适用）或 `unverified`（未核实）。`observed` 和 `contradicted` 必须有简短的面试原文。缺失证据要显式展示，并降低诊断置信度。
 
-Search relevance and source credibility are separate:
+搜索相关性和来源可信度是两个独立问题：
 
-- Relevance asks whether a public search candidate is worth opening for the current company, role, round, and topic.
-- Credibility asks what the opened original excerpt can support.
-- A search citation can prove URL provenance, but it cannot prove the post contents.
+- 相关性：这条公开搜索候选是否值得针对当前公司、岗位、轮次和主题打开。
+- 可信度：打开的原帖摘录能支持哪些事实。
+- 搜索引用可以证明 URL 来源，但不能证明帖子正文内容。
 
-## Deterministic Scoring
+## 确定性评分
 
-Each of the six PM skills has four weighted dimensions. The backend computes `exact_score` from applicable, evidence-backed dimension scores, rounds to the existing 1–5 `score`, then computes the 0–100 `coach_score` as a training signal. A separate evidence profile evaluates specificity, ownership, causality, result quality, reflection, and resilience under follow-up questions, so a high capability score is not confused with a well-supported answer. Invalid skill or dimension IDs are discarded or downgraded during normalization.
+六项 PM 能力各有四个带权重的子维度。后端只从 `observed`、`contradicted` 或 `unverified` 子维度的评分计算 `exact_score`；`missing` 和 `not_applicable` 始终不计分，即使模型返回了数字也会被丢弃。结果映射到现有 1–5 分，再计算 0–100 的 `coach_score` 作为训练信号。
 
-## Compatibility
+另有证据剖面评估具体性、个人归因、因果意识、结果质量、复盘迁移和追问韧性，避免把“能力可能不错”和“这次回答证据充分”混为一谈。非法能力 ID 或子维度 ID 会在归一化时丢弃或降级。
 
-`schema_version` is `2.0`. Existing `score`, `evidence`, `diagnosis`, and string `next_practice` fields remain readable. New fields are bounded, validated, and safe to omit. Static demo data follows the same names but is explicitly synthetic.
+## 兼容性
 
-## Maintenance
+当前 `schema_version` 为 `2.1`。旧的 `score`、`evidence`、`diagnosis` 和字符串 `next_practice` 字段继续可读；新增字段都经过长度限制和合法性校验，可以省略。`scored_by` 只记录实际 provider、model、Prompt、rubric 和时间，不参与分数修正。
 
-When adding a skill, update the rubric, schema examples, backend catalog, static fixture, API tests, and UI. Keep platform-specific source handling in research grounding, not in the PM score rubric.
+`action_plan` 中的行动项包含稳定的 `action_key`/`id`、来源能力/缺口、面试元数据和训练生命周期。重复生成复盘时，必须合并行动项，不能删除已有训练尝试或验收状态。静态 Demo 使用同样的字段名，但数据必须明确标记为合成演示。
+
+面试 `outcome` 是可选的用户自报训练反馈，不能用于推断录用概率或评分因果。长期记忆在展示结果分组前必须显示样本量和模型可比性。
+
+## 维护要求
+
+新增能力时，同时更新评分规则、Schema 示例、后端能力目录、静态夹具和 API 测试。平台特定的来源处理放在研究模块，不要混入 PM 评分规则。

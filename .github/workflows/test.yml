@@ -2,7 +2,7 @@ name: tests
 
 on:
   push:
-    branches: [main]
+    branches: [main, "codex/**"]
   pull_request:
     branches: [main]
 
@@ -16,3 +16,47 @@ jobs:
           python-version: "3.12"
       - name: Run unit tests
         run: python -m unittest discover -s tests -p "test_*.py" -v
+      - name: Run offline evaluation harness
+        run: python -m app.core.evaluation_harness
+      - name: Compile application and tests
+        run: python -m compileall -q app tests scripts
+      - name: Smoke test static deployment assets over HTTP
+        run: python scripts/static_demo_http_smoke.py
+      - name: Run local resilience drills
+        run: python scripts/resilience_drill.py
+
+  browser-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install pinned browser test runtime
+        run: npm install --no-save --no-package-lock playwright@1.52.0
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Serve static demo
+        run: python -m http.server 8766 --bind 127.0.0.1 --directory static_demo > /tmp/autumn-pm-coach-static.log 2>&1 &
+      - name: Wait for static demo
+        run: |
+          for attempt in {1..15}; do
+            if curl --fail --silent --show-error http://127.0.0.1:8766/ > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/autumn-pm-coach-static.log
+          exit 1
+      - name: Run browser interaction smoke
+        run: node scripts/browser_demo_smoke.mjs
+      - name: Upload browser smoke artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: static-demo-browser-smoke
+          path: artifacts/
+          if-no-files-found: ignore

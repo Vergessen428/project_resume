@@ -1,0 +1,120 @@
+{
+  "dataset_version": "relevance-judgments-2026-07-14-v3",
+  "annotation_policy": {
+    "label_0": "不满足当前信息需求或属于泛化营销内容",
+    "label_1": "部分相关，但缺少关键公司、轮次或主题匹配",
+    "label_2": "对当前 JD 研究问题有直接帮助的面试经验候选",
+    "platform_constraint": "平台是候选发现的硬约束，不计入相关度加权总分",
+    "judgment_scope": "只评价搜索排序相关性，不评价原帖真实性或可引用性"
+  },
+  "cases": [
+    {
+      "id": "jd_xhs_indicator_round",
+      "query_context": {
+        "company": "示例公司",
+        "role": "产品经理",
+        "round_name": "一面",
+        "topic": "指标与实验",
+        "platform": "xiaohongshu"
+      },
+      "k": 3,
+      "expected_top_ids": ["xhs_good", "xhs_related"],
+      "gold": {"min_precision_at_k": 0.66, "min_recall_at_k": 1.0, "min_ndcg_at_k": 0.95},
+      "candidates": [
+        {"id": "xhs_good", "relevance_label": 2, "platform_id": "xiaohongshu", "screening": {"relevance_breakdown": {"company_match": 100, "role_match": 100, "round_match": 100, "topic_match": 100, "interview_specificity": 90, "recency": 80}}},
+        {"id": "xhs_related", "relevance_label": 2, "platform_id": "xiaohongshu", "screening": {"relevance_breakdown": {"company_match": 80, "role_match": 90, "round_match": 0, "topic_match": 100, "interview_specificity": 90, "recency": 70}}},
+        {"id": "xhs_generic", "relevance_label": 0, "platform_id": "xiaohongshu", "screening": {"relevance_breakdown": {"company_match": 0, "role_match": 80, "round_match": 0, "topic_match": 50, "interview_specificity": 10, "recency": 100}}}
+      ]
+    },
+    {
+      "id": "role_topic_without_company",
+      "query_context": {
+        "company": "未指定",
+        "role": "产品经理",
+        "round_name": "业务面",
+        "topic": "项目深挖",
+        "platform": "all"
+      },
+      "k": 3,
+      "expected_top_ids": ["nowcoder_good"],
+      "gold": {"min_precision_at_k": 0.33, "min_recall_at_k": 1.0, "min_ndcg_at_k": 0.9},
+      "candidates": [
+        {"id": "nowcoder_good", "relevance_label": 2, "platform_id": "nowcoder", "screening": {"relevance_breakdown": {"company_match": 0, "role_match": 100, "round_match": 100, "topic_match": 100, "interview_specificity": 100, "recency": 50}}},
+        {"id": "company_only", "relevance_label": 1, "platform_id": "xiaohongshu", "screening": {"relevance_breakdown": {"company_match": 100, "role_match": 0, "round_match": 50, "topic_match": 0, "interview_specificity": 60, "recency": 100}}},
+        {"id": "marketing", "relevance_label": 0, "platform_id": "nowcoder", "screening": {"relevance_breakdown": {"company_match": 0, "role_match": 30, "round_match": 0, "topic_match": 10, "interview_specificity": 0, "recency": 100}}}
+      ]
+    },
+    {
+      "id": "round_specificity_beats_company_only",
+      "query_context": {
+        "company": "示例公司",
+        "role": "产品经理",
+        "round_name": "终面",
+        "topic": "项目复盘",
+        "platform": "all"
+      },
+      "k": 3,
+      "expected_top_ids": ["exact_round", "related_round"],
+      "gold": {"min_precision_at_k": 0.66, "min_recall_at_k": 1.0, "min_ndcg_at_k": 0.95},
+      "candidates": [
+        {"id": "exact_round", "relevance_label": 2, "screening": {"relevance_breakdown": {"company_match": 100, "role_match": 100, "round_match": 100, "topic_match": 100, "interview_specificity": 95, "recency": 70}}},
+        {"id": "related_round", "relevance_label": 2, "screening": {"relevance_breakdown": {"company_match": 80, "role_match": 100, "round_match": 50, "topic_match": 100, "interview_specificity": 90, "recency": 70}}},
+        {"id": "company_only_recent", "relevance_label": 1, "screening": {"relevance_breakdown": {"company_match": 100, "role_match": 70, "round_match": 0, "topic_match": 20, "interview_specificity": 70, "recency": 100}}}
+      ]
+    },
+    {
+      "id": "specificity_beats_recency",
+      "query_context": {
+        "company": "示例公司",
+        "role": "产品经理",
+        "round_name": "一面",
+        "topic": "指标归因",
+        "platform": "all"
+      },
+      "k": 1,
+      "expected_top_ids": ["older_exact"],
+      "gold": {"min_precision_at_k": 1.0, "min_recall_at_k": 1.0, "min_ndcg_at_k": 1.0},
+      "candidates": [
+        {"id": "older_exact", "relevance_label": 2, "screening": {"relevance_breakdown": {"company_match": 100, "role_match": 100, "round_match": 100, "topic_match": 100, "interview_specificity": 95, "recency": 20}}},
+        {"id": "recent_generic", "relevance_label": 0, "screening": {"relevance_breakdown": {"company_match": 0, "role_match": 100, "round_match": 0, "topic_match": 30, "interview_specificity": 10, "recency": 100}}},
+        {"id": "recent_marketing", "relevance_label": 0, "screening": {"relevance_breakdown": {"company_match": 50, "role_match": 80, "round_match": 0, "topic_match": 0, "interview_specificity": 0, "recency": 100}}}
+      ]
+    },
+    {
+      "id": "jd_role_synonym_and_topic",
+      "query_context": {
+        "company": "示例公司",
+        "role": "AI 产品经理",
+        "round_name": "业务面",
+        "topic": "B 端客户留存",
+        "platform": "all"
+      },
+      "k": 2,
+      "expected_top_ids": ["ai_b2b_exact", "role_synonym_related"],
+      "gold": {"min_precision_at_k": 1.0, "min_recall_at_k": 1.0, "min_ndcg_at_k": 1.0},
+      "candidates": [
+        {"id": "ai_b2b_exact", "relevance_label": 2, "screening": {"relevance_breakdown": {"company_match": 100, "role_match": 100, "round_match": 100, "topic_match": 100, "interview_specificity": 100, "recency": 80}}},
+        {"id": "role_synonym_related", "relevance_label": 2, "screening": {"relevance_breakdown": {"company_match": 80, "role_match": 90, "round_match": 50, "topic_match": 80, "interview_specificity": 95, "recency": 70}}},
+        {"id": "consumer_generic", "relevance_label": 0, "screening": {"relevance_breakdown": {"company_match": 0, "role_match": 70, "round_match": 0, "topic_match": 20, "interview_specificity": 10, "recency": 100}}}
+      ]
+    },
+    {
+      "id": "missing_round_falls_back_to_topic",
+      "query_context": {
+        "company": "示例公司",
+        "role": "产品经理",
+        "round_name": "未指定",
+        "topic": "项目复盘",
+        "platform": "all"
+      },
+      "k": 1,
+      "expected_top_ids": ["topic_exact"],
+      "gold": {"min_precision_at_k": 1.0, "min_recall_at_k": 1.0, "min_ndcg_at_k": 1.0},
+      "candidates": [
+        {"id": "topic_exact", "relevance_label": 2, "screening": {"relevance_breakdown": {"company_match": 80, "role_match": 100, "round_match": 0, "topic_match": 100, "interview_specificity": 100, "recency": 60}}},
+        {"id": "round_generic", "relevance_label": 1, "screening": {"relevance_breakdown": {"company_match": 100, "role_match": 100, "round_match": 0, "topic_match": 30, "interview_specificity": 80, "recency": 100}}},
+        {"id": "role_only", "relevance_label": 0, "screening": {"relevance_breakdown": {"company_match": 0, "role_match": 100, "round_match": 0, "topic_match": 0, "interview_specificity": 20, "recency": 100}}}
+      ]
+    }
+  ]
+}

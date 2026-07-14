@@ -1,4 +1,4 @@
 interface:
-  display_name: PM Interview Evaluation
-  short_description: Evidence-based PM interview diagnosis and public research
-  default_prompt: Review this PM interview with transcript evidence, deterministic skill dimensions, and next-step practice criteria. Keep search relevance separate from source credibility.
+  display_name: PM 面试证据评估
+  short_description: 基于证据的 PM 面试诊断与公开面经研究
+  default_prompt: 请根据面试转写中的原文证据、确定性的 PM 能力子维度和下一步训练标准进行复盘。严格区分搜索相关性、资料可信度和面试表现证据。

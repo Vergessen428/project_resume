@@ -1,19 +1,19 @@
-# Evidence Policy
+# 证据政策
 
-## Interview Evidence
+## 面试证据
 
-Use short verbatim quotes from the transcript or post-interview notes. A diagnosis, score rationale, or gap may contain interpretation, but its `evidence` field must contain the quote only. If the quote cannot be located, use `（无转写原文可佐证）` and mark the item `unverified` or omit it.
+使用转写或面后笔记中的短句原文。诊断、评分理由或缺口可以包含解释，但 `evidence` 字段只能放原文引用。如果无法在记录中找到这句话，使用 `（无转写原文可佐证）`，并将该项标为 `unverified` 或省略。
 
-Do not treat a resume, job description, memory record, or public research source as evidence that the question was asked in this interview. They are context only.
+不能把简历、JD、长期记忆或公开研究资料当成“这场面试确实问过”的证据。它们只能作为上下文。
 
-## Contradictions
+## 矛盾证据
 
-Keep both the conflicting quote and the contradiction status. Do not silently average away a clear contradiction. Explain the impact in the diagnosis and lower confidence when the conflict affects the conclusion.
+同时保留互相冲突的原文和矛盾状态。不能把明确矛盾静默平均掉。要在诊断中解释矛盾的影响；如果矛盾影响结论，必须降低置信度。
 
-## Sparse Records
+## 稀疏记录
 
-Reduce the number of claims. `evidence_coverage` is the weighted share of applicable dimensions with verified evidence. Missing or unverified dimensions do not contribute to the numerator.
+减少结论数量。`evidence_coverage` 表示适用子维度中具有已核对证据的加权占比。缺失或未核实的子维度不能进入证据覆盖度分子。
 
-## Public Sources
+## 公开来源
 
-A search result is a candidate, not an approved source. The URL may be citation-verified by the search provider, while the content remains `manual_check_required` until a person opens the original post and supplies an excerpt. Comments are weak corroboration and never proof by themselves.
+搜索结果只是候选，不是已批准资料。搜索服务可以核对 URL 来源，但正文在用户打开原帖并提供摘录前仍保持 `manual_check_required`。评论只能作为弱佐证，不能单独证明事实。

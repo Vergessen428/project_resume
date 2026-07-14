@@ -1,11 +1,13 @@
-# Xiaohongshu Search Boundary
+# 小红书搜索边界
 
-Use public web search for discovery only. The supported flow is:
+使用公开网页搜索和有边界的公开 HTML 读取来发现候选资料、补充元数据。支持的流程如下：
 
-1. Build a query with `site:xiaohongshu.com/explore` plus company, role, round, topic, and synonyms.
-2. Keep the query trace, retrieval time, platform, relevance breakdown, and provenance status.
-3. Show candidates as `manual_check_required` or `needs_review`.
-4. Ask the user to open the original post and paste a relevant excerpt.
-5. Only then run credibility pre-review; never claim the search summary is the post content.
+1. 使用 `site:xiaohongshu.com/explore`，组合公司、岗位、轮次、主题和同义词生成查询。
+2. 只接受具体帖子路径（`xiaohongshu.com/explore/...`、非根路径的 `xhslink.com`，或其他受支持平台的具体帖子路径）；平台首页不能作为原帖候选。
+3. 保存查询轨迹、读取时间、平台、相关度拆解和来源状态。
+4. 不登录、不使用 Cookie、不调用私有 API，尝试打开具体公开 URL。可读取时自动补充标题、规范 URL、可见文字、读取状态和时间。
+5. 将读到正文的候选标记为 `auto_fetched_unverified`；脚本壳、访问阻断、重定向越界或正文过短的候选标记为 `manual_check_required`。
+6. 对自动读取或人工提供的摘录执行可信度预审。最多输出四条 `question_leads`，每条都要保留支撑摘录是否已核实。这些线索可以影响 JD 驱动的追问，但绝不能成为候选人本场面试表现的证据。
+7. 不能声称自动读取证明了原帖真实性。来源对结论有实质影响或存在歧义时，应提示用户检查原帖。
 
-Do not log in, read cookies, use private links, crawl the platform, or infer authenticity from a search snippet. If the result is empty or sparse, report the attempted queries and suggest changing company aliases, role synonyms, round names, or manually pasting a link.
+禁止登录、读取 Cookie、使用私有链接、抓取动态/私密内容，或根据搜索摘要推断真实性。结果为空或稀疏时，报告已经尝试的查询，并建议更换公司别名、岗位同义词、轮次名称，或手动粘贴原帖链接。
