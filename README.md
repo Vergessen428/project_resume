@@ -165,6 +165,14 @@ flowchart LR
 
 想看真实页面，请直接打开上方的在线 Demo；想亲自录入 JD、简历和面试内容，请使用本地实操版。
 
+### 代表性界面：成长报告
+
+成长报告适合用一张纵向图展示，因为它本身就是对多场面试的阶段性回看；其他页面则通过上面的任务链和职责表说明，避免被单张截图的视口限制误导。
+
+<p align="center">
+  <img src="docs/screenshots/04-growth-report.png" alt="阶段成长报告" width="900">
+</p>
+
 ## 继续了解
 
 - [PM 评估 Skill](./skills/pm-interview-evaluation/)
