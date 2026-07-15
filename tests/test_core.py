@@ -28,7 +28,7 @@ from core.memory_override_store import MemoryOverrideStore
 from core.operational_log import OperationalLog
 from core.research_store import ResearchStore
 from core.task_store import TaskFailure, TaskRegistry
-from core.research_grounding import _AllowlistedRedirectHandler, build_search_query, build_search_queries, derive_research_topic, enrich_public_candidate, fetch_public_source, is_allowed_public_post_url, is_allowed_public_url, normalise_platform, run_research_agent, screen_candidate
+from core.research_grounding import _AllowlistedRedirectHandler, build_search_query, build_search_queries, compute_recency, derive_research_topic, enrich_public_candidate, fetch_public_source, is_allowed_public_post_url, is_allowed_public_url, normalise_platform, run_research_agent, screen_candidate
 from core.models import FailoverModelClient
 from web_app import persist_agent_candidates, redact_company_for_model, validate_interview, validate_research, validate_research_candidate
 
@@ -664,7 +664,7 @@ class InterviewStoreOutcomeTests(unittest.TestCase):
             })
             saved = store.get(record["id"])
             source = saved["research_context"][0]
-            self.assertEqual(source["screening"]["relevance"], 42)
+            self.assertEqual(source["screening"]["relevance"], 93)
             self.assertEqual(source["assessment"]["question_leads"][0]["topic"], "归因")
             self.assertEqual(source["status"], "needs_review")
             self.assertNotIn("source_text", source)
@@ -962,7 +962,7 @@ class ResearchStoreTests(unittest.TestCase):
                 "url": "https://www.xiaohongshu.com/explore/demo",
                 "screening": {"recommendation": "needs_review", "relevance": 72, "relevance_breakdown": {"company_match": 90}, "reason": "相关"},
             })
-            self.assertEqual(record["screening"]["relevance"], 27)
+            self.assertEqual(record["screening"]["relevance"], 90)
             self.assertEqual(record["screening"]["relevance_breakdown"]["company_match"], 90)
             self.assertEqual(store.get(record["id"])["screening"]["reason"], "相关")
 
@@ -1256,7 +1256,7 @@ class ResearchAgentTests(unittest.TestCase):
 
     def test_query_plan_has_bounded_variants(self):
         queries = build_search_queries("示例公司", "产品经理", "一面", "指标与实验", "xiaohongshu")
-        self.assertEqual(len(queries), 4)
+        self.assertEqual(len(queries), 3)
         self.assertTrue(all("site:xiaohongshu.com/explore" in query for query in queries))
 
     def test_public_fetch_rejects_non_platform_hosts(self):
@@ -1370,6 +1370,7 @@ class ResearchAgentTests(unittest.TestCase):
         self.assertEqual(seen[0]["title"], "原帖标题")
         self.assertEqual(seen[0]["provenance_status"], "auto_fetched_unverified")
         self.assertEqual(seen[0]["fetch_status"], "fetched_metadata")
+        self.assertEqual(result["collected"][0]["query_source"], "agent_planned")
 
     def test_agent_drops_non_whitelisted_search_results_before_screening(self):
         seen = []
@@ -1500,50 +1501,49 @@ class ResearchAgentTests(unittest.TestCase):
 
         result = run_research_agent(None, "x", "y", "z", target=99, max_rounds=99, max_searches=6,
                                     plan_fn=plan, search_fn=search, screen_fn=screen)
-        self.assertEqual(counter["n"], 6)  # never exceeds max_searches
-        self.assertEqual(result["stop_reason"], "已达到搜索次数上限。")
+        self.assertEqual(counter["n"], 3)  # never exceeds the lightweight search budget
+        self.assertIn("已尝试 3 条查询", result["stop_reason"])
+        self.assertIn("未发现", result["stop_reason"])
 
-    def test_screen_candidate_never_auto_approves_and_uses_relevance(self):
-        class _Model:
-            def complete(self, prompt):  # noqa: ARG002
-                # A malicious/confused model tries to smuggle an auto_approved verdict.
-                return '{"recommendation":"auto_approved","confidence":95,"relevance":95}'
+    def test_screen_candidate_is_deterministic_and_explains_matches(self):
+        candidate = {
+            "url": "http://a",
+            "title": "示例公司 产品经理一面面经：指标与实验项目深挖",
+            "summary": "面试官追问项目取舍、指标定义和复盘。",
+            "published_date": "2025-12-01",
+        }
+        now = datetime(2026, 1, 2, tzinfo=timezone.utc)
+        first = screen_candidate(object(), candidate, "示例公司", "产品经理", "一面", "指标与实验", now=now)
+        second = screen_candidate(object(), candidate, "示例公司", "产品经理", "一面", "指标与实验", now=now)
+        self.assertEqual(first, second)
+        self.assertEqual(first["relevance_method"], "deterministic_v1")
+        self.assertEqual(first["recommendation"], "needs_review")
+        self.assertIn("命中目标公司", first["match_reasons"])
+        self.assertEqual(first["relevance_breakdown"]["recency"], 100)
 
-        out = screen_candidate(_Model(), {"url": "http://a", "title": "t", "summary": "s"}, "字节", "PM", "一面")
-        self.assertEqual(out["recommendation"], "dismissed")  # not in whitelist -> dropped
+    def test_screen_candidate_excludes_unfilled_dimensions(self):
+        out = screen_candidate(
+            object(),
+            {"title": "产品经理面经：指标项目深挖", "summary": "记录面试官追问和复盘。"},
+            "",
+            "产品经理",
+            "",
+            "指标与实验",
+            now=datetime(2026, 1, 2, tzinfo=timezone.utc),
+        )
+        self.assertIsNone(out["relevance_breakdown"]["company_match"])
+        self.assertIsNone(out["relevance_breakdown"]["round_match"])
+        self.assertIsNone(out["relevance_breakdown"]["recency"])
+        self.assertIn("company_match", out["not_applicable_dimensions"])
+        self.assertGreaterEqual(out["relevance"], 45)
 
-    def test_screen_candidate_uses_fixed_weighted_relevance(self):
-        class _Model:
-            def complete(self, prompt):  # noqa: ARG002
-                return (
-                    '{"recommendation":"needs_review",'
-                    '"relevance_breakdown":{"company_match":100,"role_match":80,'
-                    '"round_match":60,"topic_match":40,"interview_specificity":20,"recency":0},'
-                    '"reason":"相关，但需要打开原文确认"}'
-                )
-
-        out = screen_candidate(_Model(), {"url": "http://a", "title": "t"}, "字节", "PM", "一面", "指标")
-        self.assertEqual(out["relevance"], 67)
-        self.assertEqual(out["relevance_breakdown"]["role_match"], 80)
-
-    def test_screen_candidate_rejects_unweighted_aggregate_score(self):
-        class _Model:
-            def complete(self, prompt):  # noqa: ARG002
-                return '{"recommendation":"needs_review","relevance":100,"reason":"模型直接给了总分"}'
-
-        out = screen_candidate(_Model(), {"url": "http://a", "title": "t"}, "字节", "PM", "一面")
-        self.assertEqual(out["recommendation"], "dismissed")
-        self.assertEqual(out["relevance"], 0)
-        self.assertEqual(out["relevance_breakdown"], {})
-
-    def test_screen_candidate_drops_malformed_model_json(self):
-        class _Model:
-            def complete(self, prompt):  # noqa: ARG002
-                return '{"recommendation":"needs_review",}'
-
-        out = screen_candidate(_Model(), {"url": "http://a", "title": "t"}, "字节", "PM", "一面")
-        self.assertEqual(out["recommendation"], "dismissed")
-        self.assertEqual(out["relevance"], 0)
+    def test_recency_is_deterministic_and_unknown_dates_are_not_guessed(self):
+        now = datetime(2026, 1, 2, tzinfo=timezone.utc)
+        self.assertEqual(compute_recency("2026-01-01", now), 100)
+        self.assertEqual(compute_recency("2025-01-02", now), 60)
+        self.assertEqual(compute_recency("2023-01-01", now), 20)
+        self.assertIsNone(compute_recency("", now))
+        self.assertIsNone(compute_recency("not-a-date", now))
 
 
 class ResearchFixtureTests(unittest.TestCase):

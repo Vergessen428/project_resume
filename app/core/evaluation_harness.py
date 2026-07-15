@@ -18,8 +18,8 @@ from .pm_skills import PM_SKILL_DIMENSIONS, gap_tag_ids
 from .research_grounding import (
     AGENT_PLAN_PROMPT,
     RELEVANCE_DIMENSIONS,
-    SCREEN_CANDIDATE_PROMPT,
     UNTRUSTED_PUBLIC_TEXT_MARKER,
+    calculate_relevance,
     run_research_agent,
 )
 
@@ -315,7 +315,7 @@ def _check_research_case(case: Dict[str, Any]) -> Dict[str, Any]:
         if not collected or collected[0].get("fetch_status") != expected_fetch:
             issues.append("fetch_status")
     if case.get("expected") == "candidate_text_is_untrusted":
-        if UNTRUSTED_PUBLIC_TEXT_MARKER not in SCREEN_CANDIDATE_PROMPT or UNTRUSTED_PUBLIC_TEXT_MARKER not in AGENT_PLAN_PROMPT:
+        if UNTRUSTED_PUBLIC_TEXT_MARKER not in AGENT_PLAN_PROMPT:
             issues.append("prompt_boundary")
     return {
         "id": str(case.get("id", "unknown")),
@@ -347,13 +347,7 @@ def evaluate_research_fixtures(path: str) -> Dict[str, Any]:
 
 def _weighted_relevance(breakdown: Dict[str, Any]) -> int:
     """Recompute the production relevance score without a model call."""
-    values = {}
-    for dimension, _weight, _description in RELEVANCE_DIMENSIONS:
-        try:
-            values[dimension] = max(0, min(100, int((breakdown or {}).get(dimension, 0))))
-        except (TypeError, ValueError):
-            values[dimension] = 0
-    return round(sum(values[dimension] * weight / 100 for dimension, weight, _ in RELEVANCE_DIMENSIONS))
+    return calculate_relevance(breakdown)
 
 
 def _dcg(relevances: List[int]) -> float:

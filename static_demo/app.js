@@ -148,6 +148,41 @@ async function discoverResearch(event) { event.preventDefault(); const button = 
 function renderAgentTrace(trace, stopReason, foundEnough) { const root = $('#agent-trace'); root.replaceChildren(); root.hidden = !(trace && trace.length); if (!trace || !trace.length) return; trace.forEach(step => { const card = document.createElement('div'); card.className = 'agent-round'; card.innerHTML = '<strong></strong><p></p><p class="agent-query"></p>'; const label = step.action === 'stop' ? '停止' : step.action === 'fetch' ? '读取公开页' : '搜索'; card.querySelector('strong').textContent = `第 ${step.round} 轮 · ${label}${step.action === 'search' ? ` · 新增 ${step.added || 0}` : ''}${step.action === 'fetch' ? ` · 读取 ${step.fetched || 0}` : ''}`; card.querySelector('p').textContent = step.reasoning || ''; const q = card.querySelector('.agent-query'); if (step.query) q.textContent = `${step.action === 'fetch' ? '动作' : '查询词'}：${step.query}`; else q.remove(); root.append(card); }); const stop = document.createElement('p'); stop.className = 'agent-stop'; stop.textContent = `${foundEnough ? '已找够待确认资料' : '未达目标数量'} · ${stopReason || '结束'}`; root.append(stop); }
 function renderAgentCollected(candidates) { const root = $('#discovery-results'); root.replaceChildren(); if (!candidates.length) { root.innerHTML = '<p class="empty-copy">Agent 未收集到通过来源校验的候选。</p>'; return; } candidates.forEach(candidate => { const card = document.createElement('article'); card.className = 'discovery-item'; card.innerHTML = '<a target="_blank" rel="noreferrer"></a><p></p><div><span></span><button class="secondary-button compact-button" type="button">带入资料库</button></div>'; card.querySelector('a').href = candidate.url; card.querySelector('a').textContent = candidate.title; const screening = candidate.screening || {}; const fetchLabel = candidate.fetch_status === 'fetched_metadata' ? '已自动读取公开页' : candidate.fetch_status === 'shell_only' ? '页面脚本壳' : '仍需人工确认'; card.querySelector('p').textContent = `${candidate.summary || '候选公开资料'}${screening.reason ? ` · 初筛：${screening.reason}` : ''}`; card.querySelector('span').textContent = [candidate.platform, candidate.platform_id ? `来源 ${candidate.platform_id}` : '', screening.relevance != null ? `相关度提示 ${screening.relevance}/100` : '', fetchLabel].filter(Boolean).join(' · '); card.querySelector('button').onclick = demoWrite; root.append(card); }); }
 
+function enhanceStaticResearchCards(candidates) {
+  if (!candidates.length) {
+    const empty = $('#discovery-results .empty-copy');
+    if (empty) empty.textContent = '没有发现通过规则筛选的候选。问题仍可仅基于 JD 与简历生成；建议换公司别名、岗位同义词或轮次。';
+    return;
+  }
+  $$('#discovery-results .discovery-item').forEach((card, index) => {
+    const screening = candidates[index]?.screening || {};
+    const score = Number(screening.relevance);
+    const label = Number.isFinite(score) ? (score >= 75 ? '高度相关' : score >= 45 ? '部分相关' : '低相关') : '相关度未计算';
+    const span = card.querySelector('span');
+    if (span) span.textContent = [candidates[index]?.platform, label, candidates[index]?.provenance_status || '待人工确认'].filter(Boolean).join(' · ');
+    const details = document.createElement('details'); const summary = document.createElement('summary'); summary.textContent = '查看匹配理由'; const body = document.createElement('p');
+    const reasons = screening.match_reasons?.length ? screening.match_reasons.join('；') : (screening.reason || '暂无明确匹配理由'); const missing = screening.not_applicable_dimensions?.length ? `；未填写：${screening.not_applicable_dimensions.join('、')}` : '';
+    body.textContent = `规则匹配：${reasons}${missing}`; details.append(summary, body); card.append(details);
+  });
+}
+const staticRenderDiscovery = renderDiscovery;
+renderDiscovery = candidates => { staticRenderDiscovery(candidates); enhanceStaticResearchCards(candidates || []); };
+const staticRenderAgentCollected = renderAgentCollected;
+renderAgentCollected = candidates => { staticRenderAgentCollected(candidates); enhanceStaticResearchCards(candidates || []); };
+const staticRenderResearchList = renderResearchList;
+renderResearchList = () => {
+  staticRenderResearchList();
+  $$('#research-list .research-item').forEach((card, index) => {
+    const screening = DEMO.research?.screening || {};
+    const score = Number(screening.relevance);
+    const label = Number.isFinite(score) ? (score >= 75 ? '高度相关' : score >= 45 ? '部分相关' : '低相关') : '相关度未计算';
+    const line = card.querySelector('.research-screening');
+    if (line) line.textContent = `${label} · 规则匹配${screening.reason ? ` · ${screening.reason}` : ''}`;
+  });
+};
+const staticRenderSearchMeta = renderSearchMeta;
+renderSearchMeta = meta => { staticRenderSearchMeta(meta); if (meta?.relevance_method) { const item = document.createElement('span'); item.textContent = '相关度：规则匹配，不是模型主观评分'; $('#search-meta').append(item); } };
+
 function renderMemory(memory) { const root = $('#memory-summary'); root.replaceChildren(); const items = [{ label: '已复盘面试', value: memory.reviewed_interviews || 0 }, { label: '待完成行动', value: memory.open_actions?.length || 0 }, { label: '重复薄弱点', value: memory.recurring_gaps?.length || 0 }]; items.forEach(item => { const block = document.createElement('div'); block.innerHTML = '<span></span><strong></strong>'; block.querySelector('span').textContent = item.label; block.querySelector('strong').textContent = item.value; root.append(block); }); const patterns = document.createElement('div'); patterns.className = 'memory-patterns'; const generated = document.createElement('span'); generated.textContent = "记忆快照：" + (memory.generated_at || "刚刚计算"); patterns.append(generated); const audit = memory.audit || {}; const auditTag = document.createElement('span'); auditTag.textContent = audit.replayable ? `可回放聚合：${audit.input_count || 0} 场 · ${audit.algorithm_version || 'deterministic'}` : '聚合来源未提供'; patterns.append(auditTag); const comparability = document.createElement('span'); comparability.className = memory.comparability === 'comparable' ? 'memory-ok' : 'memory-warning'; comparability.textContent = memory.comparability === 'comparable' ? '同一评分版本可比较' : `评分可比性：${memory.comparability || '未知'}`; patterns.append(comparability); const label = document.createElement('p'); label.textContent = '当前重复出现'; patterns.append(label); (memory.recurring_gaps || []).slice(0, 4).forEach(item => { const tag = document.createElement('span'); tag.textContent = `${item.title} · ${item.occurrences}次`; patterns.append(tag); }); if (!(memory.recurring_gaps || []).length) patterns.append('暂无足够数据'); const outcome = memory.outcome_signal || {}; const outcomeTag = document.createElement('span'); outcomeTag.textContent = '结果反馈：' + (outcome.sample_count || 0) + ' 场 · 通过 ' + (outcome.passed?.count || 0) + ' / 未通过 ' + (outcome.failed?.count || 0) + ' · ' + (outcome.status || '样本不足'); patterns.append(outcomeTag); const outcomeNote = document.createElement('span'); outcomeNote.textContent = outcome.interpretation || '结果为自报训练反馈，不是招聘预测。'; patterns.append(outcomeNote); root.append(patterns); }
 function appendStaticMemorySources(memory) { const root = $('#memory-summary'); if (!(memory.recurring_gaps || []).length) return; const section = document.createElement('section'); section.className = 'memory-governance'; const heading = document.createElement('p'); heading.textContent = '记忆来源（演示）'; section.append(heading); (memory.recurring_gaps || []).forEach(item => { const details = document.createElement('details'); const summary = document.createElement('summary'); summary.textContent = `${item.title} · ${item.occurrences} 次`; details.append(summary); (item.sources || []).forEach(source => { const line = document.createElement('p'); line.className = 'memory-source-line'; line.textContent = `${source.company} · ${source.round_name} · ${source.date} · 证据：${source.evidence}`; details.append(line); }); section.append(details); }); root.append(section); }
 const renderStaticMemoryWithSources = renderMemory;

@@ -15,8 +15,11 @@ window.AUTUMN_DEMO_DATA_OVERRIDES = {
     confidence: 0,
     screening: {
       recommendation: "needs_review",
-      relevance: 72,
-      relevance_breakdown: { company_match: 30, role_match: 25, round_match: 10, topic_match: 12, interview_specificity: 0, recency: 0 },
+      relevance: 76,
+      relevance_breakdown: { company_match: 100, role_match: 70, round_match: 50, topic_match: 70, interview_specificity: 70, recency: null },
+      relevance_method: "deterministic_v1",
+      not_applicable_dimensions: ["recency"],
+      match_reasons: ["命中岗位与主题线索"],
       reason: "岗位和主题命中，但这是演示候选，必须打开原帖确认具体面试内容。",
     },
     source_kind: "demo_synthetic",
@@ -57,8 +60,11 @@ window.AUTUMN_DEMO_DATA_OVERRIDES = {
       fetch: { fetch_status: "shell_only", fetch_reason: "静态演示不联网；真实后端会尝试读取公开 HTML，遇到脚本壳则保留待确认。" },
       screening: {
         recommendation: "needs_review",
-        relevance: 72,
-        relevance_breakdown: { company_match: 30, role_match: 25, round_match: 10, topic_match: 12, interview_specificity: 0, recency: 0 },
+        relevance: 76,
+        relevance_breakdown: { company_match: 100, role_match: 70, round_match: 50, topic_match: 70, interview_specificity: 70, recency: null },
+        relevance_method: "deterministic_v1",
+        not_applicable_dimensions: ["recency"],
+        match_reasons: ["命中岗位与主题线索"],
         reason: "岗位和主题命中，但这是演示候选，必须打开原帖确认具体面试内容。",
       },
     }],
@@ -77,6 +83,8 @@ window.AUTUMN_DEMO_DATA_OVERRIDES = {
       platform_label: "小红书",
       queries_tried: ["site:xiaohongshu.com/explore 字节 产品经理 一面 指标 面经", "site:xiaohongshu.com/explore 字节 AI产品 项目深挖"],
       result_count: 1,
+      relevance_method: "deterministic_v1",
+      query_source: "agent_planned",
       fetch_status_counts: { shell_only: 1 },
       failure_reasons: ["静态演示未联网；真实后端会记录公开页读取失败原因。"],
       empty_reason: "",
@@ -247,7 +255,7 @@ window.AUTUMN_DEMO_DATA = (() => {
 
   const agentResult = {
     collected: [
-      { url: "https://www.xiaohongshu.com/explore/demo-pm-coach", title: "小红书公开面经候选（演示资料）", platform: "小红书", summary: "静态演示用的合成候选：展示指标定义、A/B 实验与归因主题的相关度提示，不对应可验证原帖。", published_date: "", source_kind: "demo_synthetic", provenance_status: "manual_check_required", screening: { recommendation: "needs_review", relevance: 72, reason: "演示相关度提示，需打开真实原帖确认" } },
+      { url: "https://www.xiaohongshu.com/explore/demo-pm-coach", title: "小红书公开面经候选（演示资料）", platform: "小红书", summary: "静态演示用的合成候选：展示指标定义、A/B 实验与归因主题的相关度提示，不对应可验证原帖。", published_date: "", source_kind: "demo_synthetic", provenance_status: "manual_check_required", query_source: "agent_planned", screening: { recommendation: "needs_review", relevance: 76, relevance_method: "deterministic_v1", relevance_breakdown: { company_match: 100, role_match: 70, round_match: 50, topic_match: 70, interview_specificity: 70, recency: null }, not_applicable_dimensions: ["recency"], match_reasons: ["命中岗位与主题线索"], reason: "演示相关度提示，需打开真实原帖确认" } },
     ],
     trace: [
       { round: 1, reasoning: "静态演示不联网；先用公司+岗位+一面直搜", action: "search", query: "字节 产品经理 一面 面经", added: 0 },
@@ -261,6 +269,8 @@ window.AUTUMN_DEMO_DATA = (() => {
       platform_label: "小红书",
       queries_tried: ["site:xiaohongshu.com/explore 字节 产品经理 一面 指标 面经", "site:xiaohongshu.com/explore 字节 AI产品 项目深挖"],
       result_count: 1,
+      relevance_method: "deterministic_v1",
+      query_source: "agent_planned",
       fetch_status_counts: { shell_only: 1 },
       failure_reasons: ["静态演示未联网；真实后端会记录公开页读取失败原因。"],
       empty_reason: "",

@@ -22,6 +22,7 @@ from core.research_store import ResearchStore
 from core.resume_store import ResumeStore
 from core.data_lifecycle import RECOVERY_MARKER_NAME, create_backup
 from core.task_store import TaskRegistry
+from core.research_grounding import build_search_queries
 
 
 class ApiContractTests(unittest.TestCase):
@@ -232,6 +233,8 @@ class ApiContractTests(unittest.TestCase):
         meta = body["search_meta"]
         self.assertEqual(meta["mode"], "public_discovery_with_bounded_fetch")
         self.assertTrue(meta["auto_fetch"])
+        self.assertEqual(meta["relevance_method"], "deterministic_v1")
+        self.assertEqual(meta["query_source"], "deterministic_jd")
         self.assertEqual(meta["fetch_status_counts"], {"not_attempted": 1})
         self.assertIn("site:xiaohongshu.com/explore", meta["queries_tried"][0])
 
@@ -251,7 +254,7 @@ class ApiContractTests(unittest.TestCase):
         self.assertIn("不进入本场表现证据", body["research_meta"]["note"])
 
     def test_agent_route_can_reuse_recent_local_candidates_without_model_call(self):
-        query = "site:xiaohongshu.com/explore 示例公司 产品经理 一面 指标 面经"
+        query = build_search_queries("示例公司", "产品经理", "一面", "指标", "xiaohongshu")[0]
         for index in range(3):
             self.research.create({
                 "title": "缓存候选 %s" % index,

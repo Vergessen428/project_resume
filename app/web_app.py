@@ -39,7 +39,7 @@ from core.model_provider import build_model, load_dotenv
 from core.multipart import parse_multipart
 from core.memory_override_store import MemoryOverrideStore
 from core.pm_skills import public_skills
-from core.research_grounding import ResearchGroundingError, assess_public_source, build_search_query, build_search_queries, derive_research_topic, discover_public_sources, enrich_public_candidate, is_allowed_public_post_url, normalise_platform, run_research_agent
+from core.research_grounding import RELEVANCE_METHOD, ResearchGroundingError, assess_public_source, build_search_query, build_search_queries, derive_research_topic, discover_public_sources, enrich_public_candidate, is_allowed_public_post_url, normalise_platform, run_research_agent
 from core.research_store import ResearchStore
 from core.resume_store import ResumeStore
 from core.operational_log import OperationalLog
@@ -228,6 +228,8 @@ def _build_discovery_search_meta(
     return {
         "mode": "public_discovery_with_bounded_fetch",
         "auto_fetch": True,
+        "relevance_method": RELEVANCE_METHOD,
+        "query_source": "deterministic_jd",
         "platform": platform,
         "platform_label": label,
         "queries_tried": queries,
@@ -269,6 +271,8 @@ def run_research_agent_request(payload: Dict[str, Any]) -> Dict[str, Any]:
             "stop_reason": "已复用缓存中的近期候选资料。",
             "found_enough": True,
             "search_meta": {
+                "relevance_method": RELEVANCE_METHOD,
+                "query_source": "cache",
                 "platform": platform,
                 "platform_label": {"all": "全网", "xiaohongshu": "小红书", "nowcoder": "牛客"}.get(platform, "全网"),
                 "queries_tried": cache_queries,
@@ -284,6 +288,7 @@ def run_research_agent_request(payload: Dict[str, Any]) -> Dict[str, Any]:
     result = run_research_agent(model, company, role, round_name, topic, platform=platform)
     persistence = persist_agent_candidates(model, result["collected"])
     result.setdefault("search_meta", {})["cache_hit"] = False
+    result["search_meta"]["relevance_method"] = RELEVANCE_METHOD
     result["search_meta"]["cache_ttl_seconds"] = cache_ttl
     return {
         "collected": result["collected"],
@@ -431,7 +436,7 @@ def persist_agent_candidates(model: Any, candidates: Any) -> Dict[str, Any]:
                     key: candidate.get(key)
                     for key in (
                         "title", "url", "canonical_url", "platform", "platform_id", "company", "role",
-                        "round_name", "topic", "published_date", "search_query", "source_kind",
+                        "round_name", "topic", "published_date", "search_query", "query_source", "source_kind",
                         "provenance_status", "retrieved_at", "fetched_at", "fetch_status", "fetch_reason",
                         "source_text", "comments_text", "tags", "notes", "screening",
                     )

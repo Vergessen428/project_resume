@@ -70,7 +70,7 @@ class ResearchStore:
                     for field in {
                         "title", "url", "canonical_url", "platform", "platform_id", "company", "role",
                         "round_name", "published_date", "source_text", "comments_text", "tags",
-                        "source_kind", "provenance_status", "search_query", "fetch_status", "fetch_reason",
+                        "source_kind", "provenance_status", "search_query", "query_source", "fetch_status", "fetch_reason",
                     }
                 )
                 updated = self._normalise(payload, partial=True)
@@ -310,6 +310,7 @@ class ResearchStore:
             "published_date": 30,
             "platform_id": 40,
             "search_query": 1000,
+            "query_source": 40,
             "source_kind": 60,
             "provenance_status": 60,
             "retrieved_at": 40,
@@ -330,14 +331,21 @@ class ResearchStore:
             raw_screening = payload.get("screening") if isinstance(payload.get("screening"), dict) else {}
             breakdown = {}
             for key in ("company_match", "role_match", "round_match", "topic_match", "interview_specificity", "recency"):
+                raw_value = (raw_screening.get("relevance_breakdown") or {}).get(key)
+                if raw_value is None:
+                    breakdown[key] = None
+                    continue
                 try:
-                    breakdown[key] = max(0, min(100, int((raw_screening.get("relevance_breakdown") or {}).get(key, 0))))
+                    breakdown[key] = max(0, min(100, int(raw_value)))
                 except (TypeError, ValueError):
                     breakdown[key] = 0
             result["screening"] = {
                 "recommendation": str(raw_screening.get("recommendation", "needs_review"))[:30],
                 "relevance": calculate_relevance(breakdown),
                 "relevance_breakdown": breakdown,
+                "relevance_method": str(raw_screening.get("relevance_method", "legacy_unknown"))[:40],
+                "not_applicable_dimensions": [str(item)[:60] for item in raw_screening.get("not_applicable_dimensions", []) if str(item).strip()][:6],
+                "match_reasons": [str(item)[:160] for item in raw_screening.get("match_reasons", []) if str(item).strip()][:5],
                 "reason": str(raw_screening.get("reason", ""))[:300],
             }
         if not partial:

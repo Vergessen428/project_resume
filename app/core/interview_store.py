@@ -349,7 +349,7 @@ class InterviewStore:
             key: str(item.get(key, ""))[:900]
             for key in (
                 "title", "url", "canonical_url", "platform", "platform_id", "company", "role",
-                "round_name", "topic", "summary", "search_query", "source_kind",
+                "round_name", "topic", "summary", "search_query", "query_source", "source_kind",
                 "provenance_status", "retrieved_at", "fetch_status", "status",
             )
         }
@@ -357,14 +357,21 @@ class InterviewStore:
         raw_screening = item.get("screening") if isinstance(item.get("screening"), dict) else {}
         breakdown = {}
         for key in ("company_match", "role_match", "round_match", "topic_match", "interview_specificity", "recency"):
+            raw_value = (raw_screening.get("relevance_breakdown") or {}).get(key)
+            if raw_value is None:
+                breakdown[key] = None
+                continue
             try:
-                breakdown[key] = max(0, min(100, int((raw_screening.get("relevance_breakdown") or {}).get(key, 0))))
+                breakdown[key] = max(0, min(100, int(raw_value)))
             except (TypeError, ValueError):
                 breakdown[key] = 0
         snapshot["screening"] = {
             "recommendation": str(raw_screening.get("recommendation", "needs_review"))[:30],
             "relevance": calculate_relevance(breakdown),
             "relevance_breakdown": breakdown,
+            "relevance_method": str(raw_screening.get("relevance_method", "legacy_unknown"))[:40],
+            "not_applicable_dimensions": [str(item)[:60] for item in raw_screening.get("not_applicable_dimensions", []) if str(item).strip()][:6],
+            "match_reasons": [str(item)[:160] for item in raw_screening.get("match_reasons", []) if str(item).strip()][:5],
             "reason": str(raw_screening.get("reason", ""))[:300],
         }
 
