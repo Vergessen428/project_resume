@@ -7,14 +7,16 @@ score against the mean of earlier ones, and stage gates the cold-start guidance.
 
 from collections import defaultdict
 from datetime import datetime, timezone
+import re
 from typing import Any, Dict, List
 
-from .pm_skills import PM_SKILL_DIMENSIONS, gap_tag_ids
+from .pm_skills import PM_SKILL_DIMENSIONS, derive_role_family, gap_tag_ids
 
 
 # Trend: latest score vs. mean of earlier scores. A move of at least this many
 # points (on the 1-5 scale) counts as improving / declining; otherwise stable.
 _TREND_DELTA = 0.5
+_VALIDATION_DELTA = 0.5
 
 # Stage gates, based on how many interviews have been reviewed.
 _STAGE_EMERGING_MIN = 2
@@ -24,6 +26,175 @@ _STAGE_ESTABLISHED_MIN = 5
 _OUTCOME_DESCRIPTIVE_MIN = 4
 _OUTCOME_STABLE_MIN = 6
 _OUTCOME_GROUP_MIN = 2
+
+
+def _normalise_match_text(value: Any) -> str:
+    return re.sub(r"[^a-z0-9\u4e00-\u9fff]", "", str(value or "").lower())
+
+
+def _review_score(skill: Dict[str, Any]) -> float:
+    for key in ("exact_score", "score"):
+        try:
+            value = float(skill.get(key))
+        except (TypeError, ValueError):
+            continue
+        if 1 <= value <= 5:
+            return value
+    return None
+
+
+def _verified_skill_evidence(skill: Dict[str, Any]) -> str:
+    evidence = str(skill.get("evidence", "")).strip()
+    if evidence and not evidence.startswith("（无转写原文"):
+        return evidence[:500]
+    for dimension in skill.get("dimensions") if isinstance(skill.get("dimensions"), list) else []:
+        if not isinstance(dimension, dict):
+            continue
+        status = str(dimension.get("status", "")).strip()
+        evidence = str(dimension.get("evidence", "")).strip()
+        if status in {"observed", "contradicted"} and evidence and not evidence.startswith("（无转写原文"):
+            return evidence[:500]
+    return ""
+
+
+def _review_gap_ids(review: Dict[str, Any]) -> set:
+    ids = set()
+    for gap in review.get("gaps") if isinstance(review.get("gaps"), list) else []:
+        if isinstance(gap, dict):
+            value = str(gap.get("canonical_gap_id", "") or gap.get("gap_id", "")).strip()
+            if value:
+                ids.add(value)
+    for skill in review.get("skill_diagnosis") if isinstance(review.get("skill_diagnosis"), list) else []:
+        if not isinstance(skill, dict):
+            continue
+        for gap in skill.get("gaps") if isinstance(skill.get("gaps"), list) else []:
+            if isinstance(gap, dict) and str(gap.get("gap_id", "")).strip():
+                ids.add(str(gap["gap_id"]).strip())
+    return ids
+
+
+def _compatible_interview(source: Dict[str, Any], candidate: Dict[str, Any]) -> bool:
+    source_profile = source.get("jd_profile") if isinstance(source.get("jd_profile"), dict) else {}
+    candidate_profile = candidate.get("jd_profile") if isinstance(candidate.get("jd_profile"), dict) else {}
+    source_family = str(source_profile.get("role_family", "") or derive_role_family(source.get("role", ""), source.get("jd_analysis"))).strip()
+    candidate_family = str(candidate_profile.get("role_family", "") or derive_role_family(candidate.get("role", ""), candidate.get("jd_analysis"))).strip()
+    if not source_family or not candidate_family or source_family != candidate_family:
+        return False
+    return (
+        _normalise_match_text(source.get("company"))
+        and _normalise_match_text(source.get("company")) == _normalise_match_text(candidate.get("company"))
+    ) or (
+        _normalise_match_text(source.get("role"))
+        and _normalise_match_text(source.get("role")) == _normalise_match_text(candidate.get("role"))
+    )
+
+
+def compute_validations(records: List[Dict[str, Any]]) -> Dict[Any, Dict[str, Any]]:
+    """Compute action validation without mutating records or trusting model fields."""
+    reviewed = [item for item in records if isinstance(item, dict) and isinstance(item.get("review"), dict)]
+    result = {}
+    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    for source in reviewed:
+        source_review = source.get("review") or {}
+        source_date = str(source.get("date", "")).strip()
+        for action in source_review.get("action_plan") if isinstance(source_review.get("action_plan"), list) else []:
+            if not isinstance(action, dict):
+                continue
+            skill_ids = [str(value).strip() for value in action.get("source_skill_ids", []) if str(value).strip() in PM_SKILL_DIMENSIONS]
+            gap_ids = {str(value).strip() for value in action.get("source_gap_ids", []) if str(value).strip()}
+            if not skill_ids:
+                inferred = [value.split("__", 1)[0] for value in gap_ids if value.split("__", 1)[0] in PM_SKILL_DIMENSIONS]
+                skill_ids = list(dict.fromkeys(inferred))
+            key = (str(source.get("id", "")), str(action.get("id", "")))
+            base = {"status": "pending", "interview_id": "", "source_skill_id": skill_ids[0] if skill_ids else "", "delta": None, "evidence": "", "match_reason": "", "computed_at": now}
+            if not skill_ids or not source_date:
+                base["match_reason"] = "缺少稳定能力来源或面试日期，暂不自动验证"
+                result[key] = base
+                continue
+            later = sorted(
+                [
+                    candidate for candidate in reviewed
+                    if str(candidate.get("date", "")).strip() > source_date
+                    and _compatible_interview(source, candidate)
+                ],
+                key=lambda item: (str(item.get("date", "")), str(item.get("updated_at", ""))),
+            )
+            if not later:
+                base["match_reason"] = "尚无同岗位族且公司或岗位相同的后续复盘"
+                result[key] = base
+                continue
+            candidate = later[0]
+            candidate_review = candidate.get("review") or {}
+            target_skill = next((skill for skill in candidate_review.get("skill_diagnosis", []) if isinstance(skill, dict) and skill.get("skill_id") == skill_ids[0]), None)
+            base["interview_id"] = str(candidate.get("id", ""))
+            base["match_reason"] = "同岗位族，且公司或归一化岗位名称一致"
+            if not isinstance(target_skill, dict):
+                base["match_reason"] = "自动找到后续面试，但验证场没有该能力的诊断记录"
+                result[key] = base
+                continue
+            evidence = _verified_skill_evidence(target_skill)
+            if not evidence:
+                base["match_reason"] = "验证场没有可核对的该能力原文证据"
+                result[key] = base
+                continue
+            base["evidence"] = evidence
+            source_skill = next((skill for skill in source_review.get("skill_diagnosis", []) if isinstance(skill, dict) and skill.get("skill_id") == skill_ids[0]), {})
+            source_score = _review_score(source_skill)
+            candidate_score = _review_score(target_skill)
+            if source_score is not None and candidate_score is not None:
+                base["delta"] = round(candidate_score - source_score, 1)
+            persisted_gaps = _review_gap_ids(candidate_review)
+            gap_persists = bool(gap_ids & persisted_gaps)
+            if not gap_persists and base["delta"] is not None and base["delta"] >= _VALIDATION_DELTA:
+                base["status"] = "supported"
+                base["match_reason"] = "验证场实际覆盖能力，目标缺口未重复且 exact_score 提升至少 0.5"
+            else:
+                base["status"] = "partially"
+                base["match_reason"] = "验证场实际覆盖能力，但缺口仍在或分数提升不足 0.5"
+            result[key] = base
+    return result
+
+
+def read_related_interviews(records: List[Dict[str, Any]], skill_id: str = "", gap_id: str = "", limit: int = 3) -> List[Dict[str, Any]]:
+    """Return bounded historical evidence fragments, never raw interview text."""
+    limit = max(1, min(3, int(limit or 3)))
+    skill_id = str(skill_id or "").strip()
+    gap_id = str(gap_id or "").strip()
+    rows = []
+    for interview in sorted(
+        [item for item in records if isinstance(item, dict) and isinstance(item.get("review"), dict)],
+        key=lambda item: str(item.get("date", "")),
+        reverse=True,
+    ):
+        review = interview.get("review") or {}
+        matched = []
+        for skill in review.get("skill_diagnosis") if isinstance(review.get("skill_diagnosis"), list) else []:
+            if skill_id and isinstance(skill, dict) and skill.get("skill_id") == skill_id:
+                evidence = _verified_skill_evidence(skill)
+                if evidence:
+                    matched.append({"gap_title": "", "evidence": evidence})
+        for gap in review.get("gaps") if isinstance(review.get("gaps"), list) else []:
+            if not isinstance(gap, dict):
+                continue
+            candidate_gap = str(gap.get("canonical_gap_id", "") or gap.get("gap_id", "")).strip()
+            if gap_id and candidate_gap != gap_id:
+                continue
+            evidence = str(gap.get("evidence", "")).strip()
+            if evidence and not evidence.startswith("（无转写原文"):
+                matched.append({"gap_title": str(gap.get("title", ""))[:180], "evidence": evidence[:500]})
+        for match in matched:
+            rows.append({
+                "company": str(interview.get("company", ""))[:120],
+                "role": str(interview.get("role", ""))[:120],
+                "round_name": str(interview.get("round_name", ""))[:80],
+                "date": str(interview.get("date", ""))[:20],
+                "gap_title": match["gap_title"],
+                "skill_id": skill_id,
+                "evidence": match["evidence"],
+            })
+            if len(rows) >= limit:
+                return rows
+    return rows
 
 
 def _skill_trend(scores: List[float]) -> str:
@@ -138,6 +309,7 @@ def build_candidate_memory(interviews: List[Dict[str, Any]], gap_overrides: Dict
     skill_sources: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
     gap_groups: Dict[str, Dict[str, Any]] = {}
     open_actions: List[Dict[str, str]] = []
+    validation_rows: List[Dict[str, Any]] = []
     timeline: List[Dict[str, str]] = []
     scoring_identities = set()
     has_unknown_scoring = False
@@ -216,6 +388,22 @@ def build_candidate_memory(interviews: List[Dict[str, Any]], gap_overrides: Dict
                     "evidence": str(skill.get("evidence", ""))[:500],
                 })
         for action in review.get("action_plan") or []:
+            validation = action.get("validation") if isinstance(action.get("validation"), dict) else {"status": "pending"}
+            validation_status = str(validation.get("status", "pending")).strip().lower()
+            if validation_status not in {"supported", "partially", "pending"}:
+                validation_status = "partially" if validation_status == "inconclusive" else "pending"
+            validation_rows.append({
+                "action_id": str(action.get("id", ""))[:100],
+                "source_interview_id": str(action.get("source_interview_id", interview.get("id", "")))[:80],
+                "source_date": str(action.get("source_interview_date", interview.get("date", "")))[:20],
+                "action": str(action.get("action", ""))[:500],
+                "status": validation_status,
+                "interview_id": str(validation.get("interview_id", ""))[:80],
+                "evidence": str(validation.get("evidence", ""))[:500],
+                "match_reason": str(validation.get("match_reason", ""))[:240],
+                "delta": validation.get("delta") if isinstance(validation.get("delta"), (int, float)) else None,
+                "computed_at": str(validation.get("computed_at", ""))[:40],
+            })
             if not action.get("done"):
                 criteria = action.get("success_criteria") if isinstance(action.get("success_criteria"), list) else []
                 open_actions.append({
@@ -229,6 +417,8 @@ def build_candidate_memory(interviews: List[Dict[str, Any]], gap_overrides: Dict
                     "source_interview_id": str(action.get("source_interview_id", interview.get("id", "")))[:80],
                     "source_date": str(action.get("source_interview_date", interview.get("date", "")))[:20],
                     "from": "%s · %s" % (interview.get("company", ""), interview.get("round_name", "面试")),
+                    "validation": validation_rows[-1],
+                    "is_primary": bool(action.get("is_primary")),
                 })
 
     skill_summary = []
@@ -249,6 +439,15 @@ def build_candidate_memory(interviews: List[Dict[str, Any]], gap_overrides: Dict
         key=lambda group: (-group["occurrences"], group["title"]),
     )[:8]
 
+    validation_summary = {"supported": 0, "partially": 0, "pending": 0}
+    for row in validation_rows:
+        validation_summary[row["status"]] = validation_summary.get(row["status"], 0) + 1
+    recent_validations = sorted(
+        validation_rows,
+        key=lambda item: (str(item.get("computed_at", "")), str(item.get("source_date", ""))),
+        reverse=True,
+    )[:6]
+
     if not scoring_identities:
         comparability = "no_data"
     elif has_unknown_scoring:
@@ -261,13 +460,15 @@ def build_candidate_memory(interviews: List[Dict[str, Any]], gap_overrides: Dict
         item["trend_comparable"] = comparability == "comparable"
 
     memory = {
-        "memory_version": "1.3",
+        "memory_version": "1.4",
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "reviewed_interviews": len(reviewed),
         "total_interviews": len(interviews),
         "recurring_gaps": recurring_gaps,
         "skill_summary": skill_summary,
         "open_actions": open_actions[:8],
+        "validation_summary": validation_summary,
+        "recent_validations": recent_validations,
         "timeline": sorted(timeline, key=lambda item: item.get("date", "")),
         "scoring_providers": sorted({identity[0] for identity in scoring_identities}),
         "scoring_models": sorted({identity[1] for identity in scoring_identities}),
@@ -293,7 +494,7 @@ def build_candidate_memory(interviews: List[Dict[str, Any]], gap_overrides: Dict
         })
     memory["audit"] = {
         "aggregation": "deterministic",
-        "algorithm_version": "growth-memory-1.3",
+        "algorithm_version": "growth-memory-1.4",
         "replayable": True,
         "input_count": len(replay_inputs),
         "inputs": replay_inputs,

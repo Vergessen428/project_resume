@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from .local_store import read_json_value
+from .pm_skills import normalise_jd_profile
 from .research_grounding import calculate_relevance
 
 
@@ -54,6 +55,7 @@ class InterviewStore:
     def create(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         now = self._now()
         record = self._normalise(payload)
+        record["jd_profile"] = normalise_jd_profile(record.get("job_description", ""), record.get("jd_analysis"), record.get("role", ""), record.get("jd_profile"))
         record.update({"id": uuid.uuid4().hex, "created_at": now, "updated_at": now, "review": None})
         with self._lock:
             records = self._read_all()
@@ -69,6 +71,7 @@ class InterviewStore:
                     continue
                 merged = dict(record)
                 merged.update(self._normalise(payload, partial=True))
+                merged["jd_profile"] = normalise_jd_profile(merged.get("job_description", ""), merged.get("jd_analysis"), merged.get("role", ""), merged.get("jd_profile"))
                 merged["updated_at"] = self._now()
                 records[index] = merged
                 self._write_all(records)
@@ -86,6 +89,7 @@ class InterviewStore:
                 previous_actions = previous_review.get("action_plan") if isinstance(previous_review.get("action_plan"), list) else []
                 previous_by_key = {}
                 previous_by_signature = {}
+                previous_by_sources = {}
                 for previous in previous_actions:
                     if not isinstance(previous, dict):
                         continue
@@ -94,7 +98,20 @@ class InterviewStore:
                         action_key = _action_text_signature(previous)
                     previous_by_key.setdefault(action_key, []).append(previous)
                     previous_by_signature.setdefault(_action_text_signature(previous), []).append(previous)
+                    source_key = self._action_source_key(previous)
+                    if source_key:
+                        previous_by_sources.setdefault(source_key, []).append(previous)
                 actions = stored_review.get("action_plan") if isinstance(stored_review.get("action_plan"), list) else []
+                used_previous = set()
+
+                def take(candidates):
+                    for candidate in candidates or []:
+                        marker = id(candidate)
+                        if marker not in used_previous:
+                            used_previous.add(marker)
+                            return candidate
+                    return None
+
                 for action in actions:
                     if not isinstance(action, dict):
                         continue
@@ -103,16 +120,28 @@ class InterviewStore:
                         action_key = _action_text_signature(action)
                     action.setdefault("action_key", action_key)
                     action.setdefault("id", action_key)
-                    if action_key and previous_by_key.get(action_key):
-                        previous = previous_by_key[action_key].pop(0)
-                    elif previous_by_signature.get(_action_text_signature(action)):
-                        previous = previous_by_signature[_action_text_signature(action)].pop(0)
-                    else:
-                        previous = None
+                    source_key = self._action_source_key(action)
+                    previous = take(previous_by_key.get(action_key))
+                    if previous is None and source_key:
+                        previous = take(previous_by_sources.get(source_key))
+                    if previous is None:
+                        previous = take(previous_by_signature.get(_action_text_signature(action)))
+                    if previous is None and source_key:
+                        gap_key = source_key.split("|skills=", 1)[0]
+                        gap_matches = [
+                            item for key, values in previous_by_sources.items()
+                            if key.startswith(gap_key + "|skills=")
+                            for item in values
+                        ]
+                        if len(gap_matches) == 1:
+                            previous = take(gap_matches)
+                    # validation is owned by the store and can never be copied
+                    # from a newly submitted model response.
+                    action.pop("validation", None)
                     if previous is not None:
                         # The new review owns diagnosis text; the store owns
                         # the training lifecycle and preserves it on reruns.
-                        for field in ("id", "done", "completed_at", "acceptance_status", "acceptance_note", "attempts", "training_progress"):
+                        for field in ("id", "done", "completed_at", "acceptance_status", "acceptance_note", "attempts", "training_progress", "validation"):
                             if field in previous:
                                 action[field] = copy.deepcopy(previous[field])
                     action.setdefault("source_interview_id", interview_id)
@@ -127,6 +156,33 @@ class InterviewStore:
                 self._write_all(records)
                 return copy.deepcopy(record)
         return None
+
+    @staticmethod
+    def _action_source_key(action: Dict[str, Any]) -> str:
+        gaps = sorted({str(value).strip() for value in action.get("source_gap_ids", []) if str(value).strip()})
+        skills = sorted({str(value).strip() for value in action.get("source_skill_ids", []) if str(value).strip()})
+        if not gaps and not skills:
+            return ""
+        return "gaps=%s|skills=%s" % (",".join(gaps), ",".join(skills))
+
+    def reconcile_validations(self, records: List[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+        """Persist deterministic validation projections after review writes."""
+        from .growth_memory import compute_validations
+
+        with self._lock:
+            all_records = copy.deepcopy(records) if isinstance(records, list) else self._read_all()
+            validations = compute_validations(all_records)
+            for record in all_records:
+                review = record.get("review") if isinstance(record.get("review"), dict) else {}
+                for action in review.get("action_plan") if isinstance(review.get("action_plan"), list) else []:
+                    key = (str(record.get("id", "")), str(action.get("id", "")))
+                    action["validation"] = copy.deepcopy(validations.get(key, self._pending_validation("尚无可计算的训练来源")))
+            self._write_all(all_records)
+            return copy.deepcopy(all_records)
+
+    @staticmethod
+    def _pending_validation(reason: str) -> Dict[str, Any]:
+        return {"status": "pending", "interview_id": "", "source_skill_id": "", "delta": None, "evidence": "", "match_reason": reason[:240], "computed_at": ""}
 
     def delete(self, interview_id: str) -> bool:
         with self._lock:
@@ -287,7 +343,17 @@ class InterviewStore:
         return None
 
     def _read_all(self) -> List[Dict[str, Any]]:
-        return read_json_value(self.path, [], list, "面试")
+        records = read_json_value(self.path, [], list, "面试")
+        for record in records:
+            if not isinstance(record, dict):
+                continue
+            record["jd_profile"] = normalise_jd_profile(
+                record.get("job_description", ""),
+                record.get("jd_analysis"),
+                record.get("role", ""),
+                record.get("jd_profile"),
+            )
+        return records
 
     def _write_all(self, records: List[Dict[str, Any]]) -> None:
         temporary_path = self.path + ".tmp"
@@ -325,6 +391,8 @@ class InterviewStore:
             result["outcome_source"] = "self_reported" if source == "self_reported" and result.get("outcome", "") else ""
         if "jd_analysis" in payload:
             result["jd_analysis"] = payload.get("jd_analysis") if isinstance(payload.get("jd_analysis"), dict) else None
+        if "jd_profile" in payload:
+            result["jd_profile"] = payload.get("jd_profile") if isinstance(payload.get("jd_profile"), dict) else None
         if "research_context" in payload:
             sources = payload.get("research_context")
             result["research_context"] = [

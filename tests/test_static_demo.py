@@ -76,6 +76,9 @@ class StaticDemoSmokeTests(unittest.TestCase):
         self.assertLess(html.index("/demo_data.js"), html.index("/app.js"))
         self.assertIn("AUTUMN_DEMO_DATA", read("static_demo", "demo_data.js"))
         self.assertIn("skill_diagnosis", read("static_demo", "demo_data.js"))
+        self.assertIn("validation_summary", read("static_demo", "demo_data.js"))
+        self.assertIn("renderStaticValidationReport", read("static_demo", "app.js"))
+        self.assertIn("validation-hint", html)
         self.assertNotIn("const review = {", read("static_demo", "app.js"))
 
     def test_static_actions_are_explicitly_read_only(self):
@@ -152,8 +155,8 @@ class StaticDemoSmokeTests(unittest.TestCase):
         self.assertIn('evidence_quality: "verified"', data)
         self.assertIn('skills: ["metrics_experiment", "structured_communication"]', data)
         self.assertIn('skill_id: "business_context", skill_name: "业务与岗位理解", score: null, exact_score: null', data)
-        self.assertIn('memory_version: "1.3"', data)
-        self.assertIn('algorithm_version: "growth-memory-1.3"', data)
+        self.assertIn('memory_version: "1.4"', data)
+        self.assertIn('algorithm_version: "growth-memory-1.4"', data)
         self.assertIn("question_leads", data)
         self.assertIn("search_meta", data)
         self.assertIn("relevance_breakdown", data)
@@ -164,6 +167,11 @@ class StaticDemoSmokeTests(unittest.TestCase):
         self.assertIn("source_skill_ids", data)
         self.assertIn("source_gap_ids", data)
         self.assertIn("source_interview_id", data)
+        self.assertIn("jd_profile", data)
+        self.assertIn("jd_coverage", data)
+        self.assertIn("validation_summary", data)
+        self.assertIn("validation:", data)
+        self.assertIn("primary-action", read("static_demo", "app.js"))
 
     def test_search_controls_explain_preview_vs_agent_ingest(self):
         for path in (("app", "web", "app.js"), ("static_demo", "app.js")):

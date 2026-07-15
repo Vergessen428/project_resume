@@ -21,7 +21,7 @@ from core.data_lifecycle import clear_recovery_marker, create_backup, inspect_st
 from core.data_retention import apply_retention, preview_retention
 from core.interview_review import _normalise_review, _normalise_growth_report, _parse_json, sample_reviewed_interview, generate_note_questions, _normalise_note_questions, generate_interview_review
 from core.evaluation_harness import evaluate_all_fixtures, evaluate_quality_gold_fixtures, evaluate_relevance_fixtures, evaluate_research_fixtures, evaluate_review_fixtures
-from core.growth_memory import build_candidate_memory
+from core.growth_memory import build_candidate_memory, compute_validations, read_related_interviews
 from core.interview_store import InterviewStore
 from core.local_store import StoreDataError
 from core.memory_override_store import MemoryOverrideStore
@@ -194,7 +194,7 @@ class ReviewNormaliseTests(unittest.TestCase):
         self.assertGreaterEqual(len(cases), 5)
         for case in cases:
             review = _normalise_review(case["review"], transcript=case["transcript"])
-            self.assertEqual(review["schema_version"], "2.1")
+            self.assertEqual(review["schema_version"], "2.2")
             for skill in review["skill_diagnosis"]:
                 if skill["score"] is not None:
                     self.assertLessEqual(skill["score"], 5)
@@ -206,7 +206,7 @@ class ReviewNormaliseTests(unittest.TestCase):
 
     def test_review_metadata_is_normalised_and_legacy_is_explicit(self):
         review = _normalise_review({"summary": "s", "scored_by": {"provider": "openai", "model": "gpt-test", "prompt_version": "2.1", "rubric_version": "pm-rubric-2.0", "scored_at": "2026-01-01T00:00:00Z"}})
-        self.assertEqual(review["schema_version"], "2.1")
+        self.assertEqual(review["schema_version"], "2.2")
         self.assertEqual(review["scored_by"]["provider"], "openai")
         legacy = _normalise_review({"summary": "old"})
         self.assertEqual(legacy["scored_by"]["provider"], "legacy_unknown")
@@ -478,7 +478,7 @@ class GrowthMemoryTests(unittest.TestCase):
         interview = self._reviewed("i1", "2026-01", skills=[{"skill_id": "product_sense", "score": 3, "evidence": "用户问题"}])
         interview["updated_at"] = "2026-01-02T00:00:00+00:00"
         memory = build_candidate_memory([interview])
-        self.assertEqual(memory["memory_version"], "1.3")
+        self.assertEqual(memory["memory_version"], "1.4")
         self.assertTrue(memory["audit"]["replayable"])
         self.assertEqual(memory["audit"]["input_count"], 1)
         self.assertEqual(memory["audit"]["inputs"][0]["interview_id"], "i1")
@@ -527,6 +527,49 @@ class GrowthMemoryTests(unittest.TestCase):
         self.assertEqual(metrics["latest_score"], 2.8)
         self.assertEqual(metrics["sources"][-1]["exact_score"], 2.8)
 
+    def _validation_record(self, iid, date, score, gaps=None, evidence="我定义了报名转化率。", company="C", role="AI 产品经理"):
+        return {
+            "id": iid, "company": company, "role": role, "date": date,
+            "jd_profile": {"role_family": "ai_product"},
+            "review": {
+                "gaps": gaps or [],
+                "skill_diagnosis": [{"skill_id": "metrics_experiment", "exact_score": score, "evidence": evidence, "dimensions": [{"id": "definition", "status": "observed", "evidence": evidence}]}],
+                "action_plan": [],
+            },
+        }
+
+    def test_validation_supported_requires_coverage_gap_absence_and_score_rise(self):
+        source = self._validation_record("i1", "2026-01-01", 2.0, [{"canonical_gap_id": "metrics_experiment__attribution", "title": "归因"}])
+        source["review"]["action_plan"] = [{"id": "a1", "source_skill_ids": ["metrics_experiment"], "source_gap_ids": ["metrics_experiment__attribution"]}]
+        later = self._validation_record("i2", "2026-01-02", 2.6)
+        validation = compute_validations([source, later])[("i1", "a1")]
+        self.assertEqual(validation["status"], "supported")
+        self.assertEqual(validation["interview_id"], "i2")
+        self.assertEqual(validation["delta"], 0.6)
+        self.assertEqual(validation["evidence"], "我定义了报名转化率。")
+
+    def test_validation_is_partial_when_gap_persists_or_score_is_flat(self):
+        source = self._validation_record("i1", "2026-01-01", 2.0, [{"canonical_gap_id": "metrics_experiment__attribution", "title": "归因"}])
+        source["review"]["action_plan"] = [{"id": "a1", "source_skill_ids": ["metrics_experiment"], "source_gap_ids": ["metrics_experiment__attribution"]}]
+        later = self._validation_record("i2", "2026-01-02", 2.0, [{"canonical_gap_id": "metrics_experiment__attribution", "title": "归因"}])
+        self.assertEqual(compute_validations([source, later])[("i1", "a1")]["status"], "partially")
+
+    def test_validation_pending_when_later_interview_does_not_cover_skill_or_family(self):
+        source = self._validation_record("i1", "2026-01-01", 2.0, [{"canonical_gap_id": "metrics_experiment__attribution", "title": "归因"}])
+        source["review"]["action_plan"] = [{"id": "a1", "source_skill_ids": ["metrics_experiment"], "source_gap_ids": ["metrics_experiment__attribution"]}]
+        later = self._validation_record("i2", "2026-01-02", 4.0, evidence="")
+        later["review"]["skill_diagnosis"] = [{"skill_id": "product_sense", "exact_score": 4, "evidence": "我定义了用户问题。"}]
+        self.assertEqual(compute_validations([source, later])[("i1", "a1")]["status"], "pending")
+        later["jd_profile"] = {"role_family": "growth"}
+        self.assertEqual(compute_validations([source, later])[("i1", "a1")]["status"], "pending")
+
+    def test_related_history_is_bounded_and_does_not_return_transcript(self):
+        record = self._validation_record("i1", "2026-01-01", 2.0, [{"canonical_gap_id": "metrics_experiment__attribution", "title": "归因", "evidence": "指标证据"}])
+        record["transcript"] = "完整私密转写，不应返回"
+        rows = read_related_interviews([record], gap_id="metrics_experiment__attribution", limit=9)
+        self.assertLessEqual(len(rows), 3)
+        self.assertNotIn("transcript", json.dumps(rows, ensure_ascii=False))
+        self.assertEqual(rows[0]["evidence"], "指标证据")
     def test_stage_gates_on_reviewed_count(self):
         def mem_for(n):
             return build_candidate_memory([self._reviewed(str(i), "2026-0%d" % (i + 1)) for i in range(n)])
@@ -743,6 +786,27 @@ class InterviewStoreOutcomeTests(unittest.TestCase):
             self.assertTrue(action["done"])
             self.assertEqual(action["acceptance_status"], "passed")
             self.assertEqual(action["completed_at"], completed_at)
+
+    def test_validation_survives_rerun_and_model_cannot_write_it(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = InterviewStore(os.path.join(tmp, "interviews.json"))
+            record = store.create({"company": "A", "role": "AI 产品经理", "date": "2026-01-01", "transcript": "note"})
+            first = store.save_review(record["id"], {"action_plan": [{"id": "a1", "action": "先练指标", "source_skill_ids": ["metrics_experiment"], "source_gap_ids": ["metrics_experiment__attribution"]}]})
+            store.reconcile_validations()
+            self.assertEqual(store.get(record["id"])["review"]["action_plan"][0]["validation"]["status"], "pending")
+            rerun = store.save_review(record["id"], {"action_plan": [{"id": "new-id", "action": "模型伪造验证", "source_skill_ids": ["metrics_experiment"], "source_gap_ids": ["metrics_experiment__attribution"], "validation": {"status": "supported"}}]})
+            action = rerun["review"]["action_plan"][0]
+            self.assertEqual(action["id"], "a1")
+            self.assertEqual(action["validation"]["status"], "pending")
+
+    def test_action_text_changes_but_same_gap_reuses_id(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = InterviewStore(os.path.join(tmp, "interviews.json"))
+            record = store.create({"company": "A", "role": "PM", "date": "2026-01-01", "transcript": "note"})
+            first = store.save_review(record["id"], {"action_plan": [{"action": "练指标", "source_skill_ids": ["metrics_experiment"], "source_gap_ids": ["metrics_experiment__attribution"]}]})
+            old_id = first["review"]["action_plan"][0]["id"]
+            second = store.save_review(record["id"], {"action_plan": [{"action": "重写一次指标归因", "source_skill_ids": ["metrics_experiment"], "source_gap_ids": ["metrics_experiment__attribution"]}]})
+            self.assertEqual(second["review"]["action_plan"][0]["id"], old_id)
 
     def test_training_attempts_require_order_and_keep_a_replayable_loop(self):
         with tempfile.TemporaryDirectory() as tmp:

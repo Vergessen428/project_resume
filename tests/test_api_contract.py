@@ -134,7 +134,7 @@ class ApiContractTests(unittest.TestCase):
         self.assertEqual(status, 201)
         self.assertTrue(body["ok"])
         self.assertIn("review", body["interview"])
-        self.assertEqual(body["interview"]["review"]["schema_version"], "2.1")
+        self.assertEqual(body["interview"]["review"]["schema_version"], "2.2")
         self.assertEqual(body["interview"]["review"]["score_summary"]["coach_score"], 60)
 
     def test_status_and_retention_contracts_require_their_gates(self):
@@ -529,7 +529,7 @@ class ApiContractTests(unittest.TestCase):
         self.assertEqual(reconciled[0]["source_state"], "source_unbound")
         self.assertFalse(reconciled[0]["citation_allowed"])
 
-    def test_review_route_returns_normalised_v21_contract(self):
+    def test_review_route_returns_normalised_v22_contract(self):
         class ReviewModel:
             active_provider = "contract-test"
             model = "contract-model"
@@ -557,7 +557,7 @@ class ApiContractTests(unittest.TestCase):
             )
         self.assertEqual(status, 200)
         review = body["interview"]["review"]
-        self.assertEqual(review["schema_version"], "2.1")
+        self.assertEqual(review["schema_version"], "2.2")
         self.assertEqual(len(review["skill_diagnosis"]), 6)
         self.assertEqual(review["scored_by"]["provider"], "contract-test")
         self.assertEqual(review["scored_by"]["model"], "contract-model")

@@ -37,7 +37,7 @@ def _check_case(case: Dict[str, Any]) -> Dict[str, Any]:
     transcript = str(case.get("transcript", ""))
     review = _normalise_review(case.get("review") or {}, transcript=transcript)
     issues: List[str] = []
-    if review.get("schema_version") != "2.1":
+    if review.get("schema_version") not in {"2.1", "2.2"}:
         issues.append("schema_version")
     for skill in review.get("skill_diagnosis", []):
         if skill.get("skill_id") not in PM_SKILL_DIMENSIONS:

@@ -1,5 +1,7 @@
 """Explicit PM coaching rubrics used by review and long-term memory."""
 
+import hashlib
+import re
 from typing import Any, Dict, List
 
 
@@ -35,6 +37,115 @@ PM_SKILLS: List[Dict[str, str]] = [
         "focus": "将个人经历连接到 JD、公司业务和具体岗位场景。",
     },
 ]
+
+ROLE_FAMILIES = {
+    "ai_product": {"ai", "人工智能", "大模型", "aigc", "智能体", "算法产品", "ai产品"},
+    "general_product": {"产品经理", "产品岗", "用户产品", "产品设计"},
+    "growth": {"增长", "用户增长", "商业化", "运营增长"},
+    "b2b": {"b2b", "企业服务", "saas", "to b", "客户成功"},
+    "platform": {"平台", "中台", "基础平台", "开放平台"},
+    "data_strategy": {"数据产品", "数据策略", "分析", "数仓", "bi"},
+    "operations": {"运营", "内容产品", "社区", "活动运营"},
+}
+
+
+def derive_role_family(role: str = "", analysis: Dict[str, Any] = None) -> str:
+    """Return a conservative finite role family; empty means not inferable."""
+    analysis = analysis if isinstance(analysis, dict) else {}
+    text = " ".join(
+        str(value)
+        for value in (role, analysis.get("role_title", ""), analysis.get("keywords", []))
+    ).strip().lower()
+    if not text:
+        return ""
+    for family, keywords in ROLE_FAMILIES.items():
+        if any(keyword.lower() in text for keyword in keywords):
+            return family
+    if "产品" in text or "product" in text:
+        return "general_product"
+    # Unknown is intentionally left empty so validation cannot bind two
+    # unrelated interviews merely because their free-text roles match.
+    return ""
+
+
+def normalise_jd_profile(
+    job_description: str = "",
+    analysis: Dict[str, Any] = None,
+    role: str = "",
+    existing: Dict[str, Any] = None,
+) -> Dict[str, Any]:
+    """Build the small shared JD contract without adding another service."""
+    analysis = analysis if isinstance(analysis, dict) else {}
+    existing = existing if isinstance(existing, dict) else {}
+    jd = str(job_description or "").strip()
+    jd_hash = hashlib.sha256(jd.encode("utf-8")).hexdigest()[:24] if jd else ""
+    role_family = str(existing.get("role_family", "") or analysis.get("role_family", "")).strip()
+    if role_family not in set(ROLE_FAMILIES) | {"other"}:
+        role_family = derive_role_family(role, analysis)
+
+    source_items = []
+    for key in ("requirements", "responsibilities", "interview_focus", "keywords"):
+        values = analysis.get(key) if isinstance(analysis.get(key), list) else []
+        source_items.extend(str(item).strip() for item in values if str(item).strip())
+    text = " ".join(source_items + [jd]).lower()
+    capability_hints = {
+        "metrics_experiment": ("指标", "数据", "实验", "归因", "量化", "验证"),
+        "execution_collaboration": ("协作", "推进", "跨团队", "项目", "落地", "资源"),
+        "product_sense": ("用户", "需求", "产品", "方案", "优先级", "场景"),
+        "structured_communication": ("结构化", "拆解", "表达", "沟通", "分析"),
+        "business_context": ("业务", "市场", "行业", "岗位", "商业"),
+        "story_ownership": ("负责", "主导", "项目", "结果", "复盘"),
+    }
+    expected = {
+        "metrics_experiment": ["指标定义", "归因", "验证方法"],
+        "execution_collaboration": ["个人推进动作", "分歧处理", "落地结果"],
+        "product_sense": ["用户问题", "目标定义", "方案取舍"],
+        "structured_communication": ["结论先行", "结构化拆解", "追问应对"],
+        "business_context": ["业务目标", "岗位连接", "结果影响"],
+        "story_ownership": ["个人职责", "关键决策", "结果复盘"],
+    }
+    core = []
+    existing_core = existing.get("core_capabilities") if isinstance(existing.get("core_capabilities"), list) else []
+    for item in existing_core:
+        if not isinstance(item, dict) or str(item.get("skill_id", "")) not in PM_SKILL_DIMENSIONS:
+            continue
+        skill_id = str(item["skill_id"])
+        core.append({
+            "skill_id": skill_id,
+            "importance": str(item.get("importance", "should_have")) if str(item.get("importance", "")) in {"must_have", "should_have"} else "should_have",
+            "jd_evidence": str(item.get("jd_evidence", ""))[:500],
+            "evidence_expected": [str(value)[:120] for value in item.get("evidence_expected", []) if str(value).strip()][:5],
+        })
+    if not core:
+        for skill_id, keywords in capability_hints.items():
+            if any(keyword in text for keyword in keywords):
+                core.append({
+                    "skill_id": skill_id,
+                    "importance": "must_have" if skill_id in {"metrics_experiment", "product_sense"} else "should_have",
+                    "jd_evidence": next((item for item in source_items if any(keyword in item.lower() for keyword in keywords)), "" )[:500],
+                    "evidence_expected": expected[skill_id],
+                })
+    if not core and jd:
+        core = [{
+            "skill_id": "product_sense",
+            "importance": "should_have",
+            "jd_evidence": "JD 信息不足，暂以通用产品判断作为准备入口。",
+            "evidence_expected": expected["product_sense"],
+        }]
+    topics = []
+    for key in ("question_topics", "interview_focus", "search_topics", "search_synonyms"):
+        values = existing.get(key) if key in existing else analysis.get(key)
+        if isinstance(values, list):
+            topics.extend(str(item).strip()[:160] for item in values if str(item).strip())
+    topics = list(dict.fromkeys(topics))[:12]
+    return {
+        "profile_version": "jd-profile-1.0",
+        "jd_hash": jd_hash,
+        "role_family": role_family,
+        "core_capabilities": core[:6],
+        "question_topics": topics[:8],
+        "search_topics": topics[:8],
+    }
 
 # Each PM skill is scored through four observable signals. The model may describe
 # the signal, but the backend owns the IDs and weights so scores remain comparable
