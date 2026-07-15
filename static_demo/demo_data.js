@@ -102,6 +102,11 @@ window.AUTUMN_DEMO_DATA = (() => {
       { title: "指标定义与归因偏弱", evidence: "大意是用户多了报名就会多。", improvement: "先定义北极星指标与护栏指标，再讲清 DAU 与报名之间的因果假设和验证方式。" },
       { title: "结果缺乏量化", evidence: "但具体数值记不清了。", improvement: "复盘时补齐关键数字（提升幅度、样本、周期），用结构化结果收尾。" },
     ],
+    jd_coverage: [
+      { skill_id: "metrics_experiment", requirement: "指标设计与数据验证", status: "partial", evidence_status: "observed", evidence: "我说主要看 DAU 和报名人数，后来 DAU 涨了。", rationale: "有指标提及，但缺少口径、归因和验证闭环。" },
+      { skill_id: "execution_collaboration", requirement: "跨团队推进产品迭代", status: "covered", evidence_status: "observed", evidence: "我把需求拆成两期，先上线报名提醒。", rationale: "本场有范围取舍和推进动作证据。" },
+      { skill_id: "business_context", requirement: "连接业务目标和岗位场景", status: "not_asked", evidence_status: "missing", evidence: "（无转写原文可佐证）", rationale: "本场没有直接覆盖岗位适配问题。" },
+    ],
     questions: [
       { question: "你怎么判断它是否成功？", answer_summary: "看 DAU 和报名人数。", evidence: "我说主要看 DAU 和报名人数，后来 DAU 涨了。", assessment: "指标选择方向对，但没有定义口径，也没说明与目标的关系。", score: 2, skills: ["metrics_experiment", "structured_communication"], evidence_quality: "verified", next_practice: "用『北极星+护栏』框架重述一遍这个项目的成功标准。" },
     ],
@@ -144,10 +149,10 @@ window.AUTUMN_DEMO_DATA = (() => {
       ], gaps: [{ gap_id: "business_context__jd_link", severity: "low", evidence: "（无转写原文可佐证）", impact: "数据不足，不能下确定结论。" }], practice_plan: { action: "补充岗位连接素材", prompt: "为什么这个项目能证明你适合 AI 产品经理岗位？", success_criteria: ["连接 JD 要求", "说明业务价值", "给出个人证据"], follow_up_question: "这个项目中最能迁移到目标岗位的能力是什么？" }, next_practice: "补充岗位连接素材。" },
     ],
     action_plan: [
-      { id: "act1", action_key: "action-demo-metrics", action: "用北极星+护栏指标重写这个项目的成功定义", priority: "高", reason: "指标是本场最大失分点。", success_criteria: ["定义核心和护栏指标", "说明归因假设", "给出验证方法"], next_validation: "下一场被追问成功标准时，先说指标口径再说验证。", source_skill_ids: ["metrics_experiment"], source_gap_ids: ["metrics_experiment__attribution"], source_interview_id: "demo-interview", source_interview_date: "2026-09-18", source_company: "示例科技", source_role: "AI 产品经理实习生", source_round_name: "业务一面", acceptance_status: "pending", done: false, training_progress: { pre_test: true, rewrite: true, post_test: false, attempt_count: 2 }, attempts: [{ phase: "pre_test", response: "看 DAU 和报名人数。" }, { phase: "rewrite", response: "核心看报名转化率，DAU 作为背景指标，再用分组实验验证报名提醒的增量。" }] },
-      { id: "act2", action_key: "action-demo-quantify", action: "补齐项目关键数字并做一版量化结果收尾", priority: "中", reason: "结果模糊会削弱说服力。", success_criteria: ["给出变化幅度", "说明样本和周期", "说清结果如何影响下一步"], next_validation: "下一场项目深挖时，用结果数字完成结尾。", source_skill_ids: ["metrics_experiment", "story_ownership"], source_gap_ids: ["metrics_experiment__quantify"], source_interview_id: "demo-interview", source_interview_date: "2026-09-18", source_company: "示例科技", source_role: "AI 产品经理实习生", source_round_name: "业务一面", acceptance_status: "pending", done: false, training_progress: { pre_test: false, rewrite: false, post_test: false, attempt_count: 0 }, attempts: [] },
+      { id: "act1", action_key: "action-demo-metrics", is_primary: true, validation: { status: "pending", interview_id: "", source_skill_id: "metrics_experiment", delta: null, evidence: "", match_reason: "尚无兼容的后续复盘", computed_at: "" }, action: "用北极星+护栏指标重写这个项目的成功定义", priority: "高", reason: "指标是本场最大失分点。", success_criteria: ["定义核心和护栏指标", "说明归因假设", "给出验证方法"], next_validation: "下一场被追问成功标准时，先说指标口径再说验证。", source_skill_ids: ["metrics_experiment"], source_gap_ids: ["metrics_experiment__attribution"], source_interview_id: "demo-interview", source_interview_date: "2026-09-18", source_company: "示例科技", source_role: "AI 产品经理实习生", source_round_name: "业务一面", acceptance_status: "pending", done: false, training_progress: { pre_test: true, rewrite: true, post_test: false, attempt_count: 2 }, attempts: [{ phase: "pre_test", response: "看 DAU 和报名人数。" }, { phase: "rewrite", response: "核心看报名转化率，DAU 作为背景指标，再用分组实验验证报名提醒的增量。" }] },
+      { id: "act2", action_key: "action-demo-quantify", is_primary: false, validation: { status: "pending", interview_id: "", source_skill_id: "metrics_experiment", delta: null, evidence: "", match_reason: "尚无兼容的后续复盘", computed_at: "" }, action: "补齐项目关键数字并做一版量化结果收尾", priority: "中", reason: "结果模糊会削弱说服力。", success_criteria: ["给出变化幅度", "说明样本和周期", "说清结果如何影响下一步"], next_validation: "下一场项目深挖时，用结果数字完成结尾。", source_skill_ids: ["metrics_experiment", "story_ownership"], source_gap_ids: ["metrics_experiment__quantify"], source_interview_id: "demo-interview", source_interview_date: "2026-09-18", source_company: "示例科技", source_role: "AI 产品经理实习生", source_round_name: "业务一面", acceptance_status: "pending", done: false, training_progress: { pre_test: false, rewrite: false, post_test: false, attempt_count: 0 }, attempts: [] },
     ],
-    schema_version: "2.1",
+    schema_version: "2.2",
     scored_by: { provider: "demo_fixture", model: "static-sample", prompt_version: "2.1", rubric_version: "pm-rubric-2.0", scored_at: "2026-09-18T10:00:00+00:00" },
     score_summary: { coach_score: 60, score_scale: 100, strongest_skill: "story_ownership", priority_skills: ["metrics_experiment"], training_band: "需要针对性训练" },
     review_quality: { transcript_chars: 212, answered_questions: 1, evidence_coverage: 0.63, confidence: "medium", data_quality: "项目决策有原文证据，但结果数字和归因证据不足。" },
@@ -179,6 +184,7 @@ window.AUTUMN_DEMO_DATA = (() => {
     transcript: "面试官让我先介绍一个自己主导的项目，我讲了校园活动小程序，目标是提升同学报名率。\n他问我怎么判断项目是否成功，我说主要看 DAU 和报名人数，后来 DAU 涨了。\n接着追问为什么是这两个指标，这里我答得比较虚，大意是用户多了报名就会多。\n又问项目里最大的分歧，我说运营想多做活动入口、开发觉得时间不够，我把需求拆成两期，先上线报名提醒。\n最后问这个取舍带来什么结果，我说第一周报名比以前多了一些，但具体数值记不清了。",
     personal_notes: "面试时被追问指标定义，回答得比较虚。",
     jd_analysis: null,
+    jd_profile: { profile_version: "jd-profile-1.0", jd_hash: "demo-jd-ai-pm", role_family: "ai_product", core_capabilities: [{ skill_id: "metrics_experiment", importance: "must_have", jd_evidence: "指标设计和数据验证方案", evidence_expected: ["指标定义", "归因", "验证方法"] }, { skill_id: "execution_collaboration", importance: "should_have", jd_evidence: "跨团队推进产品迭代", evidence_expected: ["个人推进动作", "分歧处理", "落地结果"] }], question_topics: ["项目深挖", "指标与归因", "跨团队推进"], search_topics: ["项目深挖", "指标与实验", "AI 产品 case"] },
     review,
   };
 
@@ -213,7 +219,9 @@ window.AUTUMN_DEMO_DATA = (() => {
   };
 
   const memory = {
-    memory_version: "1.3", generated_at: "2026-09-18T10:05:00+00:00", reviewed_interviews: 3, total_interviews: 3, stage: "emerging", comparability: "mixed_model", mixed_scoring: true, scoring_providers: ["demo_fixture", "legacy_unknown"], scoring_models: ["static-sample", "legacy_unknown"],
+    validation_summary: { supported: 1, partially: 1, pending: 2 },
+    recent_validations: [{ action_id: "act1", source_interview_id: "demo3", source_date: "2026-09-03", action: "完成指标闭环重答", status: "supported", interview_id: "demo1", evidence: "核心看报名转化率，DAU 作为背景指标，再用分组实验验证报名提醒的增量。", match_reason: "同岗位族且公司一致 · 演示预置", delta: 0.8, computed_at: "2026-09-18T10:05:00+00:00" }],
+    memory_version: "1.4", generated_at: "2026-09-18T10:05:00+00:00", reviewed_interviews: 3, total_interviews: 3, stage: "emerging", comparability: "mixed_model", mixed_scoring: true, scoring_providers: ["demo_fixture", "legacy_unknown"], scoring_models: ["static-sample", "legacy_unknown"],
     recurring_gaps: [{ gap_key: "metrics_experiment__attribution", canonical_gap_id: "metrics_experiment__attribution", title: "指标定义与归因偏弱", occurrences: 2, sources: [{ interview_id: "demo1", company: "示例科技", role: "AI 产品经理实习生", round_name: "业务一面", date: "2026-09-18", evidence: "因为用户多了，报名应该也会更多。" }, { interview_id: "demo2", company: "示例科技", role: "AI 产品经理实习生", round_name: "业务二面", date: "2026-09-10", evidence: "结果上涨了，但没有说明对照和归因。" }] }, { gap_key: "metrics_experiment__quantify", canonical_gap_id: "metrics_experiment__quantify", title: "结果缺乏量化", occurrences: 2, sources: [{ interview_id: "demo1", company: "示例科技", role: "AI 产品经理实习生", round_name: "业务一面", date: "2026-09-18", evidence: "但具体数值记不清了。" }, { interview_id: "demo3", company: "示例科技", role: "AI 产品经理实习生", round_name: "HR 面", date: "2026-09-03", evidence: "提升了一些，具体幅度没有记录。" }] }],
     gap_overrides: [],
     skill_summary: [{ skill_id: "metrics_experiment", average_score: 2.7, observations: 3, latest_score: 3, trend: "improving", trend_comparable: false }, { skill_id: "structured_communication", average_score: 3, observations: 3, latest_score: 3, trend: "stable", trend_comparable: false }],
@@ -221,8 +229,8 @@ window.AUTUMN_DEMO_DATA = (() => {
     open_actions: [
       { action: "用北极星+护栏指标重写这个项目的成功定义", reason: "指标是本场最大失分点。", priority: "高", from: "示例科技 · 业务一面" },
     ],
-    timeline: [{ id: "demo1", company: "示例科技", role: "AI 产品经理实习生", round_name: "业务一面", date: "2026-09-18", outcome: "pending", updated_at: "2026-09-18T10:00:00", review_schema_version: "2.1" }, { id: "demo2", company: "示例科技", role: "AI 产品经理实习生", round_name: "业务二面", date: "2026-09-10", outcome: "", updated_at: "2026-09-10T10:00:00", review_schema_version: "2.1" }, { id: "demo3", company: "示例科技", role: "AI 产品经理实习生", round_name: "HR 面", date: "2026-09-03", outcome: "", updated_at: "2026-09-03T10:00:00", review_schema_version: "2.1" }],
-    audit: { aggregation: "deterministic", algorithm_version: "growth-memory-1.3", replayable: true, input_count: 3, inputs: [{ interview_id: "demo3", date: "2026-09-03", review_schema_version: "2.1", scored_by: { provider: "legacy_unknown", model: "legacy_unknown", prompt_version: "legacy_unknown", rubric_version: "legacy_unknown" } }, { interview_id: "demo2", date: "2026-09-10", review_schema_version: "2.1", scored_by: { provider: "demo_fixture", model: "static-sample", prompt_version: "2.1", rubric_version: "pm-rubric-2.0" } }, { interview_id: "demo1", date: "2026-09-18", review_schema_version: "2.1", scored_by: { provider: "demo_fixture", model: "static-sample", prompt_version: "2.1", rubric_version: "pm-rubric-2.0" } }], override_keys: [], notes: ["静态演示使用三场合成记录；真实数据由本地结构化记录重新计算，趋势优先使用 exact_score。"] },
+    timeline: [{ id: "demo1", company: "示例科技", role: "AI 产品经理实习生", round_name: "业务一面", date: "2026-09-18", outcome: "pending", updated_at: "2026-09-18T10:00:00", review_schema_version: "2.2" }, { id: "demo2", company: "示例科技", role: "AI 产品经理实习生", round_name: "业务二面", date: "2026-09-10", outcome: "", updated_at: "2026-09-10T10:00:00", review_schema_version: "2.2" }, { id: "demo3", company: "示例科技", role: "AI 产品经理实习生", round_name: "HR 面", date: "2026-09-03", outcome: "", updated_at: "2026-09-03T10:00:00", review_schema_version: "2.2" }],
+    audit: { aggregation: "deterministic", algorithm_version: "growth-memory-1.4", replayable: true, input_count: 3, inputs: [{ interview_id: "demo3", date: "2026-09-03", review_schema_version: "2.2", scored_by: { provider: "legacy_unknown", model: "legacy_unknown", prompt_version: "legacy_unknown", rubric_version: "legacy_unknown" } }, { interview_id: "demo2", date: "2026-09-10", review_schema_version: "2.2", scored_by: { provider: "demo_fixture", model: "static-sample", prompt_version: "2.1", rubric_version: "pm-rubric-2.0" } }, { interview_id: "demo1", date: "2026-09-18", review_schema_version: "2.2", scored_by: { provider: "demo_fixture", model: "static-sample", prompt_version: "2.1", rubric_version: "pm-rubric-2.0" } }], override_keys: [], notes: ["静态演示使用三场合成记录；真实数据由本地结构化记录重新计算，趋势优先使用 exact_score。"] },
   };
 
   const growthReport = {
@@ -231,8 +239,9 @@ window.AUTUMN_DEMO_DATA = (() => {
     growth_signals: [{ title: "项目取舍更清晰", evidence: "近 2 场都能说明分期或范围收敛。", interpretation: "项目主导力的决策证据开始稳定。" }, { title: "指标回答有改善", evidence: "最近一场补充了核心指标，但归因和护栏指标仍缺失。", interpretation: "方向在改善，尚未形成完整实验闭环。" }],
     recurring_patterns: [{ skill: "指标与实验 · 归因意识", occurrences: 2, evidence: "两场复盘都出现“结果上涨但无法说明因果”的证据。", recommendation: "下一次用对照组、时间窗口和护栏指标重答。" }, { skill: "项目主导力 · 结果复盘", occurrences: 2, evidence: "能讲决策，但关键结果缺少数值、样本和周期。", recommendation: "为每个项目故事建立结果数字卡。" }],
     priority_training: [{ action: "完成一次指标闭环重答", why_now: "它同时影响指标与实验、结构化表达和项目结果复盘。", success_criterion: "核心指标、护栏指标、归因假设、验证方法和结果数字齐全。", source: "示例科技 · 业务一面" }],
+    validation_summary: { supported: 1, partially: 1, pending: 2 },
     data_quality: "当前演示没有明确的通过/未通过自报结果，长期记忆由三场合成记录确定性聚合得到；混合评分版本和样本不足都会阻止趋势或结果比较。outcome 仅为自报训练反馈，不是录用预测。",
-    report_grounding: { grounded: true, memory_version: "1.3", algorithm_version: "growth-memory-1.3", source_interview_count: 3, pattern_count: 2, action_count: 1, note: "静态演示：结构化趋势、次数、来源和训练行动来自预置的确定性长期记忆；模型未参与生成。" },
+    report_grounding: { grounded: true, memory_version: "1.4", algorithm_version: "growth-memory-1.4", source_interview_count: 3, pattern_count: 2, action_count: 1, note: "静态演示：结构化趋势、次数、来源和训练行动来自预置的确定性长期记忆；模型未参与生成。" },
   };
 
   const skills = [
@@ -245,12 +254,12 @@ window.AUTUMN_DEMO_DATA = (() => {
   ];
 
   const noteQuestions = [
-    { id: "hit_1", type: "命中", skill_id: "metrics_experiment", question: "面试官追问校园活动小程序的指标时，你是怎么定义“成功”的？口径讲清了吗？", why_asked: "简历核心项目 × JD 指标设计要求" },
-    { id: "hit_2", type: "命中", skill_id: "story_ownership", question: "被问到需求取舍（活动入口 vs 报名提醒）时，你的决策依据是什么？", why_asked: "命中 JD 的问题拆解与推进能力" },
-    { id: "gap_1", type: "补刀", skill_id: "metrics_experiment", question: "JD 强调数据验证方案，你有没有被问到 A/B 实验或归因？答得如何？", why_asked: "JD 要求但简历未体现的实验能力" },
-    { id: "gap_2", type: "补刀", skill_id: "execution_collaboration", question: "跨团队推进闭环这块，面试官有没有追问你如何对齐目标、收敛分歧？", why_asked: "JD 要求跨团队推进，简历偏弱" },
-    { id: "common_1", type: "通用", question: "这场面试里，哪个问题你答得最卡？当时你是怎么回应的？", why_asked: "定位当场最大失分点" },
-    { id: "common_2", type: "通用", question: "面完你最后悔哪句话没说出来，或哪个点没讲清？", why_asked: "捕捉遗漏，供下场改进" },
+    { id: "hit_1", question_id: "hit_1", type: "命中", skill_id: "metrics_experiment", question: "面试官追问校园活动小程序的指标时，你是怎么定义“成功”的？口径讲清了吗？", why_asked: "简历核心项目 × JD 指标设计要求" },
+    { id: "hit_2", question_id: "hit_2", type: "命中", skill_id: "story_ownership", question: "被问到需求取舍（活动入口 vs 报名提醒）时，你的决策依据是什么？", why_asked: "命中 JD 的问题拆解与推进能力" },
+    { id: "gap_1", question_id: "gap_1", type: "补刀", skill_id: "metrics_experiment", question: "JD 强调数据验证方案，你有没有被问到 A/B 实验或归因？答得如何？", why_asked: "JD 要求但简历未体现的实验能力" },
+    { id: "gap_2", question_id: "gap_2", type: "补刀", skill_id: "execution_collaboration", question: "跨团队推进闭环这块，面试官有没有追问你如何对齐目标、收敛分歧？", why_asked: "JD 要求跨团队推进，简历偏弱" },
+    { id: "common_1", question_id: "common_1", type: "通用", question: "这场面试里，哪个问题你答得最卡？当时你是怎么回应的？", why_asked: "定位当场最大失分点" },
+    { id: "common_2", question_id: "common_2", type: "通用", question: "面完你最后悔哪句话没说出来，或哪个点没讲清？", why_asked: "捕捉遗漏，供下场改进" },
   ];
 
   const agentResult = {

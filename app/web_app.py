@@ -31,14 +31,14 @@ from core.data_lifecycle import (
     read_backup,
 )
 from core.data_retention import apply_retention, normalise_retention_days, preview_retention
-from core.growth_memory import build_candidate_memory
+from core.growth_memory import build_candidate_memory, read_related_interviews
 from core.interview_review import extract_job_description, generate_growth_report, generate_interview_review, generate_note_questions, sample_interview, sample_reviewed_interview
 from core.interview_store import InterviewStore
 from core.local_store import StoreDataError
 from core.model_provider import build_model, load_dotenv
 from core.multipart import parse_multipart
 from core.memory_override_store import MemoryOverrideStore
-from core.pm_skills import public_skills
+from core.pm_skills import normalise_jd_profile, public_skills
 from core.research_grounding import RELEVANCE_METHOD, ResearchGroundingError, assess_public_source, build_search_query, build_search_queries, derive_research_topic, discover_public_sources, enrich_public_candidate, is_allowed_public_post_url, normalise_platform, run_research_agent
 from core.research_store import ResearchStore
 from core.resume_store import ResumeStore
@@ -127,6 +127,8 @@ def seed_demo_data() -> None:
         created = STORE.create(sample)
         if review:
             STORE.save_review(created["id"], review)
+    if DEMO_MODE and any(isinstance(item.get("review"), dict) for item in STORE.records()):
+        STORE.reconcile_validations()
 
 
 def redact_company_for_model(value: Any, company: str) -> Any:
@@ -324,13 +326,24 @@ def run_review_request(interview_id: str, payload: Dict[str, Any]) -> Dict[str, 
     research_context = RESEARCH_STORE.approved_for(company, record.get("role", "")) + reconcile_research_context(record.get("research_context", []))
     if redact_company:
         research_context = redact_company_for_model(research_context, company)
+    records = STORE.records()
+    memory = build_candidate_memory(records, MEMORY_OVERRIDES.list())
+
+    def read_related(**kwargs):
+        return read_related_interviews(records, **kwargs)
+
     review = generate_interview_review(
         model,
         review_record,
         research_context,
-        build_candidate_memory(STORE.records(), MEMORY_OVERRIDES.list()),
+        memory,
+        read_related_fn=read_related,
     )
-    return {"interview": STORE.save_review(interview_id, review)}
+    saved = STORE.save_review(interview_id, review)
+    if saved is None:
+        raise ValueError("保存复盘失败。")
+    STORE.reconcile_validations()
+    return {"interview": STORE.get(interview_id)}
 
 
 
@@ -998,7 +1011,9 @@ class AssistantHandler(BaseHTTPRequestHandler):
                 return
             try:
                 model = build_model()
-                self.send_json({"ok": True, "analysis": extract_job_description(model, raw_jd)})
+                analysis = extract_job_description(model, raw_jd)
+                analysis["jd_profile"] = normalise_jd_profile(raw_jd, analysis, analysis.get("role_title", ""))
+                self.send_json({"ok": True, "analysis": analysis, "jd_profile": analysis["jd_profile"]})
             except Exception:
                 self.send_json({"ok": False, "error": "JD 提取失败，请检查 Gemini 网络与配额后重试。"}, 502)
             return
