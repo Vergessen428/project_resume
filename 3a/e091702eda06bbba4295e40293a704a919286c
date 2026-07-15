@@ -1,0 +1,55 @@
+README.md
+  s_530c13eb65dd40::t_a313a0d56335fa 3,7,20,22-25,29,35-36,42-43,47,51,111-117,124,127-129,182
+app/core/evaluation_harness.py
+  s_530c13eb65dd40::t_ef39b829cc0eb6 40
+app/core/growth_memory.py
+  s_530c13eb65dd40::t_b5f61ebda8ac34 10,13,19,31-199,312,391-406,420-421,442-450,463,470-471,497
+app/core/interview_review.py
+  s_530c13eb65dd40::t_4fe8dfe1247ad5 23,32,35-57,73,79,130-132,150,331,349,396-397,414-415,787,859-891,893,912,1039-1046,1118-1120
+app/core/interview_store.py
+  s_530c13eb65dd40::t_f1cc2a6b3c7bd4 17,58,74,92,101-103,105-114,123-140,144,160-186,346-356,394-395
+app/core/pm_skills.py
+  s_530c13eb65dd40::t_5dda0659e99531 3-4,41-149
+app/web/app.js
+  s_530c13eb65dd40::t_2131aa1b9594d6 83,93-94,98,172-188,195,198,214-221,251,260,346,349,351-352
+app/web/index.html
+  s_530c13eb65dd40::t_5b0f4562aada50 38,41
+app/web/styles.css
+  s_530c13eb65dd40::t_40148fcf50b785 100-117
+app/web_app.py
+  s_530c13eb65dd40::t_a63df8bd96c648 34,41,130-131,329-334,339-340,342-346,1014-1016
+docs/ROADMAP_LONG_TERM.md
+  s_530c13eb65dd40::t_08cf0db44d5352 15-16,53-63
+docs/design/EVALUATION_STANDARDS.md
+  s_530c13eb65dd40::t_99f26c11b4d16f 3-14
+static_demo/README.md
+  s_530c13eb65dd40::t_0b13c4741b2345 13,17,23
+static_demo/app.js
+  s_530c13eb65dd40::t_f96fe2510e7d0a 88-89,93,108-110,117,120,123,191,193,195-196
+static_demo/demo_data.js
+  s_530c13eb65dd40::t_97f4268c194612 105-109,152-153,155,187,222-224,232-233,242,244,257-262
+static_demo/index.html
+  s_530c13eb65dd40::t_4139d5f50c0852 38,41
+static_demo/styles.css
+  s_530c13eb65dd40::t_56120a1d23d143 91-108
+tests/test_core.py
+  s_530c13eb65dd40::t_d9c82d7c02d8bb 24,197,209,481,530-572,790-810
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "3ae091702eda06bbba4295e40293a704a919286c",
+  "prompts": {},
+  "sessions": {
+    "s_530c13eb65dd40": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5117-aef6-7ed3-9420-0cf41c972c31",
+        "model": "unknown"
+      },
+      "human_author": "Vergessen428 <Vergessen428@users.noreply.github.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
