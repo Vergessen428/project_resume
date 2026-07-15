@@ -1,0 +1,31 @@
+app/core/evaluation_harness.py
+  s_530c13eb65dd40::t_d716c0372af2c1 22,318,350
+app/core/interview_store.py
+  s_530c13eb65dd40::t_ec3b1ff456a166 352,360-363,365,372-374
+app/core/research_grounding.py
+  s_530c13eb65dd40::t_6cff5c411ff25d 99,101-104,106-108,113-114,322,520,522-526,528,531-534,537-594,596-597,599-633,635-647,651,653-656,718,734,738,740,765-767,822,880-883,899
+app/core/research_store.py
+  s_530c13eb65dd40::t_f5994398c02a6b 73,313,334-337,339,346-348
+app/web/app.js
+  s_530c13eb65dd40::t_21e53e43c9874f 257,268,280,287-293,297-307
+app/web_app.py
+  s_530c13eb65dd40::t_0154b3b62cbe40 42,231-232,274-275,291,439
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "8f3fa5196601c32c01d3964091952b9057a3a506",
+  "prompts": {},
+  "sessions": {
+    "s_530c13eb65dd40": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5117-aef6-7ed3-9420-0cf41c972c31",
+        "model": "unknown"
+      },
+      "human_author": "Vergessen428 <Vergessen428@users.noreply.github.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
