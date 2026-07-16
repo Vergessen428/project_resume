@@ -1,0 +1,27 @@
+docs/guides/ai-product-interview/01-ai-native-business.md
+  s_530c13eb65dd40::t_c2a6b66f9ed9df 1-98
+docs/guides/ai-product-interview/02-mid-small-ai-product.md
+  s_530c13eb65dd40::t_fc5b841d6f2233 1-98
+docs/guides/ai-product-interview/03-ai-enabled-traditional-business.md
+  s_530c13eb65dd40::t_a5b70069c8b0c4 1-94
+docs/guides/ai-product-interview/04-platform-tool-ai-product.md
+  s_530c13eb65dd40::t_e2a54af3dadb60 1-98
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "f5e97dc52d57a071bd6ffe84e2c05fadb72eca25",
+  "prompts": {},
+  "sessions": {
+    "s_530c13eb65dd40": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5117-aef6-7ed3-9420-0cf41c972c31",
+        "model": "unknown"
+      },
+      "human_author": "Vergessen428 <Vergessen428@users.noreply.github.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
