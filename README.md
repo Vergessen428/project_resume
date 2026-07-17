@@ -6,7 +6,9 @@
 
 > **JD 画像 → 针对性问题 → 面经研究 → 面后记录 → JD 覆盖诊断 → 训练验证 → 长期成长**
 
-在线只读 Demo：[Hugging Face Space](https://huggingface.co/spaces/Vergessne/autumn-pm-coach) · 本地实操地址：[http://127.0.0.1:8765](http://127.0.0.1:8765)
+在线可操作版：[Render](https://autumn-pm-coach.onrender.com/) · 在线只读 Demo：[Hugging Face Space](https://huggingface.co/spaces/Vergessne/autumn-pm-coach) · 本地实操地址：[http://127.0.0.1:8765](http://127.0.0.1:8765)
+
+Render 版本需要输入部署者配置的访问口令；Hugging Face 版本只用于浏览预置演示数据，不保存真实记录。
 
 ## 为什么做
 
@@ -136,6 +138,21 @@ PM Coach 保留六项能力：
 
 部署说明：[DEPLOY_HUGGINGFACE.md](./DEPLOY_HUGGINGFACE.md)
 
+### Render 在线版
+
+Render 版本运行完整后端，可以实际保存面试档案并调用 Gemini。首次进入时输入部署者设置的访问口令；进入工作台后，依次填写 JD、面试记录，再使用 JD 解析、速记问卷和 PM 复盘。
+
+部署时至少需要配置：
+
+```text
+APP_DEMO_MODE=0
+APP_ACCESS_TOKEN=<部署者设置的访问口令>
+GEMINI_API_KEY=<自己的 Gemini API Key>
+GEMINI_MODEL=gemini-3.1-flash-lite
+```
+
+访问口令只负责进入工作台，`GEMINI_API_KEY` 才负责模型调用。不要把 API Key 写入 README、代码仓库或公开截图。
+
 ### 本地实操版
 
 本地版支持保存自己的面试记录、解析 JD、调用研究 Agent、生成真实复盘、记录训练动作和查看成长报告。数据默认保存在本机，模型调用由你在本地配置。
@@ -174,6 +191,11 @@ python3 -B app/web_app.py --host 127.0.0.1 --port 8765
 
 - [PM 评估 Skill](./skills/pm-interview-evaluation/)
 - [评测标准](./docs/design/EVALUATION_STANDARDS.md)
+- [AI 产品经理面试准备：大厂 AI Native 业务](./docs/guides/ai-product-interview/01-ai-native-business.md)
+- [AI 产品经理面试准备：中小厂 AI 产品岗](./docs/guides/ai-product-interview/02-mid-small-ai-product.md)
+- [AI 产品经理面试准备：AI 赋能传统业务](./docs/guides/ai-product-interview/03-ai-enabled-traditional-business.md)
+- [AI 产品经理面试准备：平台与工具型 AI 产品](./docs/guides/ai-product-interview/04-platform-tool-ai-product.md)
+- [AI 产品经理项目逻辑与准备](./docs/design/PM_COACH_PRODUCT_LOGIC.md)
 - [长期路线](./docs/ROADMAP_LONG_TERM.md)
 - [Render 部署说明](./DEPLOY_RENDER.md)
 
