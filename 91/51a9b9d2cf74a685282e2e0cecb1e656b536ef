@@ -1,0 +1,21 @@
+docs/guides/aigc-resume-packaging/aigc_resume_packaging_doc.md
+  s_530c13eb65dd40::t_930fa0adf12021 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "9151a9b9d2cf74a685282e2e0cecb1e656b536ef",
+  "prompts": {},
+  "sessions": {
+    "s_530c13eb65dd40": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f5117-aef6-7ed3-9420-0cf41c972c31",
+        "model": "unknown"
+      },
+      "human_author": "Vergessen428 <Vergessen428@users.noreply.github.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
