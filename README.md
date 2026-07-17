@@ -191,11 +191,6 @@ python3 -B app/web_app.py --host 127.0.0.1 --port 8765
 
 - [PM 评估 Skill](./skills/pm-interview-evaluation/)
 - [评测标准](./docs/design/EVALUATION_STANDARDS.md)
-- [AI 产品经理面试准备：大厂 AI Native 业务](./docs/guides/ai-product-interview/01-ai-native-business.md)
-- [AI 产品经理面试准备：中小厂 AI 产品岗](./docs/guides/ai-product-interview/02-mid-small-ai-product.md)
-- [AI 产品经理面试准备：AI 赋能传统业务](./docs/guides/ai-product-interview/03-ai-enabled-traditional-business.md)
-- [AI 产品经理面试准备：平台与工具型 AI 产品](./docs/guides/ai-product-interview/04-platform-tool-ai-product.md)
-- [AI 产品经理项目逻辑与准备](./docs/design/PM_COACH_PRODUCT_LOGIC.md)
 - [长期路线](./docs/ROADMAP_LONG_TERM.md)
 - [Render 部署说明](./DEPLOY_RENDER.md)
 
